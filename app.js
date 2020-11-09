@@ -8,6 +8,11 @@ const database = require('./database');
 app.use(morgan('dev'));
 app.use(cors());
 
+app.get('/',function(req,res){
+    res.send("Test API")
+    database.testFunction()
+})
+
 /**
  * =====================================================================
  * ========================== CODE STARTS HERE =========================
