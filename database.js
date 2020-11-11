@@ -42,6 +42,7 @@ function testFunction() {
 
     })
 }
+
 function serverAvailable(q_id, cb) {
     pool.connect((err, client, release) => {//1 Pool = 1 Client
 
@@ -95,6 +96,16 @@ function serverAvailable(q_id, cb) {
     })
 }
 
+function CreateQueue(c_id, p_id, Callback) {
+    pool.connect((err, connect, release) =>{
+        if(err) {
+            return Callback('Error accquiring client', null);
+        }
+
+        client.query('INSERT INTO queue')
+
+    })
+}
 function resetTables() {
     /**
      * return a promise that resolves when the database is successfully reset, and rejects if there was any error.
@@ -112,7 +123,8 @@ function closeDatabaseConnections() {
 
 module.exports = {
     serverAvailable,
+    CreateQueue,
     resetTables,
     closeDatabaseConnections,
-    testFunction
+    testFunction,
 };
