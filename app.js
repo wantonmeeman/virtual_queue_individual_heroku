@@ -53,13 +53,28 @@ var schemaObj = {
                 "type": "integer",
                 "minLength": 10,
                 "maxLength": 10,
-                 "pattern": "^[\d{10}]"
+                "pattern": "^[\d{10}]"
             },
             "queue_id": {
                 "type": "String",
                 "minLength": 1000000000,
                 "maxLength": 9999999999,
                 "pattern": "^[0-9A-Za-z]*$"
+            }
+        }
+    },
+    update_queue: {
+        "type": "object",
+        "required": ["queue_id", "status"],
+        "properties": {
+            "queue_id": {
+                "type": "String",
+                "minLength": 1000000000,
+                "maxLength": 9999999999,
+                "pattern": "^[0-9A-Za-z]*$"
+            },
+            "status": {
+                "type": "String",
             }
         }
     }
@@ -135,21 +150,21 @@ app.post('/company/create', function (req, res) {
     } else {
         var companyid = req.body.company_id;
         var queueid = req.body.queue_id;
-        database.CreateQueue(companyid, queueid, function(err, result) {
-            if(err) {
+        database.CreateQueue(companyid, queueid, function (err, result) {
+            if (err) {
                 console.log(err);
-                if(err == 422) {
+                if (err == 422) {
                     res.status(422).send({
-                        error: "Queue Id '" + queueid +"' already exists",
+                        error: "Queue Id '" + queueid + "' already exists",
                         code: "QUEUE_EXISTS"
                     })
-                }else{
+                } else {
                     res.status(500).send({
                         error: "Unable to establish connection with database",
                         code: "UNEXPECTED_ERROR"
                     })
                 }
-            }else {
+            } else {
                 res.status(201).send({
                     message: "Queue Created"
                 })
@@ -162,6 +177,65 @@ app.post('/company/create', function (req, res) {
 /**
  * Company: Update Queue
  */
+app.put('/company/update', function (req, res) {
+    var schema = schemaObj.update_queue;
+    var queueid = req.body.queue_id;
+    var status = req.body.status;
+
+    let errorStatusMsg;
+    let validateStatus = jsonvalidator.validate(req.body, schema);
+    if (validateStatus.errors.length != 0) {
+        switch (validateStatus.errors[0].property) {
+            case "instance.queue_id":
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "QueueID is not a String"
+                } else if (validateStatus.errors[0].name == 'minLength') {
+                    errorStatusMsg = "QueueID is too short"
+                } else if (validateStatus.errors[0].name == 'maxLength') {
+                    errorStatusMsg = "QueueID is too long"
+                } else if (validateStatus.errors[0].name == 'pattern') {
+                    errorStatusMsg = "QueueID has invalid characters"
+                } else if (validateStatus.errors[0].name == 'required') {
+                    errorStatusMsg = "QueueID is not in the body"
+                }
+                break;
+            case "instance.status":
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "Status is not a String"
+                }
+        }
+        if(status != "ACTIVATE" || "DEACTIVATE") {
+            errorStatusMsg = "Staus must be either 'ACTIVATE' or 'DEACTIVATE'"
+        }
+
+        res.status(400).send({
+            error: errorStatusMsg,
+            code: "INVALID_QUERY sTRING"
+        })
+    }else {
+        database.update_queue(queueid, status, function(error, result) {
+            if(error) {
+                if(error == "404") {
+                    res.status(404).send({
+                        error: "The queueID '" + queueid + "' cannot be found",
+                        code: "UNKNOWN_QUEUE"
+                    })
+                } else {
+                    res.status(500).send({
+                        error:"Unable to establish connection with database",
+                        code: "UNEXPECTED_ERROR"
+                    })
+                }
+
+            }else {
+                res.status(200).send({
+                    message: "Queue Updated"
+                })
+            }
+        })
+    }
+    })
+
 
 /**
  * Company: Server Available

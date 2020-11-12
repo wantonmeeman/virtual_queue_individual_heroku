@@ -189,6 +189,8 @@ function joinQueue(customer_id, queue_id, cb) {
     })
 }
 
+
+// ****** CREATE QUEUE ******
 function CreateQueue(c_id, q_id, callback) {
     console.log(c_id, q_id);
     pool.connect((err, client, release) => {
@@ -232,6 +234,37 @@ function CreateQueue(c_id, q_id, callback) {
     })
 
 }
+
+// ****** UPDATE QUEUE ******
+function UpdateQueue(q_id, status, callback) {
+    console.log(q_id, status);
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.log(err)
+            return callback(err, null)
+        }
+
+        client.query("SELECT queue_id FROM queue WHERE queue_id = $1", [q_id], function (err1, res1) {
+            if (err1) {
+                if (res1.rows.length = 0) {
+                    return callback("404", null)
+                } else {
+                    return callback(err1, null)
+                }
+            } else {
+                client.query("UPDATE queue SET status = $1 WHERE queue_id = $2", [status, q_id], function(err2, res2) {
+                    if(err) {
+                        return callback(err2, null);
+                    }
+                    return callback(null, res2.affectedRows)
+                })
+            }
+        })
+        client.release();
+    })
+
+}
+
 
 
 
