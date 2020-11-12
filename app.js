@@ -44,6 +44,24 @@ var schemaObj = {
                 "pattern": '^[a-zA-Z0-9]*$'
             }
         }
+    },
+    create_queue: {
+        "type": "object",
+        "required": ["company_id", "queue_id"],
+        "properties": {
+            "company_id": {
+                "type": "integer",
+                "minLength": 10,
+                "maxLength": 10,
+                 "pattern": "^[\d{10}]"
+            },
+            "queue_id": {
+                "type": "String",
+                "minLength": 1000000000,
+                "maxLength": 9999999999,
+                "pattern": "^[0-9A-Za-z]*$"
+            }
+        }
     }
 }
 /**
@@ -78,24 +96,7 @@ var schemaObj = {
 app.post('/company/create', function (req, res) {
 
 
-    var schema = {
-        "type": "object",
-        "required": ["company_id", "queue_id"],
-        "properties": {
-            "company_id": {
-                "type": "integer",
-                "minLength": 10,
-                "maxLength": 10,
-                // "pattern": "^[\d{10}]"
-            },
-            "queue_id": {
-                "type": "String",
-                "minLength": 10,
-                "maxLength": 10,
-                "pattern": "^[0-9A-Za-z]*$"
-            }
-        }
-    }
+    var schema = schemaObj.create_queue;
 
     let errorStatusMsg;
     let validateStatus = jsonvalidator.validate(req.body, schema) //JSON validation
