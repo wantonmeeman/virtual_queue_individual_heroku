@@ -35,7 +35,7 @@ function serverAvailable(q_id, cb) {
             if (result.rows.length == 0) {//Queue Doesnt exist
                 console.log("Q doesnt exist")
                 return cb("404", null)
-            }else{
+            } else {
                 client.query('SELECT customer_id FROM customers WHERE served = false AND queue_id = $1 ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
                     if (err1) {
                         console.log(err1)
@@ -45,11 +45,11 @@ function serverAvailable(q_id, cb) {
                         console.log("Q is empty")
                         return cb(null, result1)
                     } else {
-                        client.query('UPDATE customers SET served = true WHERE customer_id = $1',[result1.rows[0].customer_id], function (err2, result2) {//Set served to true,2
+                        client.query('UPDATE customers SET served = true WHERE customer_id = $1', [result1.rows[0].customer_id], function (err2, result2) {//Set served to true,2
                             if (err2) {
                                 console.log(err2)
                                 return cb(err2, null)
-                            }else{//Success
+                            } else {//Success
                                 return cb(null, result1)
                             }
                         })
@@ -58,14 +58,14 @@ function serverAvailable(q_id, cb) {
             }
         })
 
-        
+
 
 
     })
 }
 
-function arrivalRate(q_id,from,duration, cb) {
-    console.log("From: "+from)
+function arrivalRate(q_id, from, duration, cb) {
+    console.log("From: " + from)
     pool.connect((err, client, release) => {//1 Pool = 1 Client
 
         if (err) {//Error Handling for Pool
@@ -78,7 +78,7 @@ function arrivalRate(q_id,from,duration, cb) {
                 return cb(err, null)
             }
             console.log(result.rows)
-        })  
+        })
         client.query('SELECT queue_id FROM customers WHERE queue_id = $1', [q_id], function (err, result) {//0
             if (err) {
                 console.log(err)
@@ -87,27 +87,70 @@ function arrivalRate(q_id,from,duration, cb) {
             if (result.rows.length == 0) {//Queue Doesnt exist
                 console.log("Q doesnt exist")
                 return cb("404", null)
-            }else{
+            } else {
                 //I give up, wtf is the error 
                 //Literally most ineffecient way
-                var endDate = (from/1000)+duration
+                var endDate = (from / 1000) + duration
                 //for(var x = (from/1000);x < endDate;x++){
-                    client.query('SELECT COUNT(*) FROM customers WHERE time_created > to_timestamp($1)::timestamp without time zone ', [from], function (err1, result1) {//1
-                        if (err1) {
-                            console.log(err1)
-                            return cb(err1, null)
-                        }else{
-                            //console.log(x)
-                            console.log("Matches: "+result1.rows[0].count)
-                        }
-                    })
+                client.query('SELECT COUNT(*) FROM customers WHERE time_created > to_timestamp($1)::timestamp without time zone ', [from], function (err1, result1) {//1
+                    if (err1) {
+                        console.log(err1)
+                        return cb(err1, null)
+                    } else {
+                        //console.log(x)
+                        console.log("Matches: " + result1.rows[0].count)
+                    }
+                })
                 //}
             }
         })
 
-        
 
 
+
+    })
+}
+
+function CreateQueue(c_id, q_id, callback) {
+    console.log(c_id, q_id);
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.log(err)
+            return callback(err, null)
+        }
+        client.query('SELECT queue_id from queue WHERE queue_id = $1', [q_id], function (error, result) {
+            if (error) {
+                callback(err, null)
+                return;
+            }
+            if (result.rows.length > 0) {
+                callback("422", null)
+                return
+            } else {
+                client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "DEACTIVATE"], function (err1, res1) {
+                    if (err1) {
+                        // if (err1.code === 'ERR_DUP_ENTRY') {
+                        //     callback(
+                        //         {
+                        //             code: '422',
+                        //             message: 'Queue Id already exists',
+                        //             inner: err1
+                        //         }, null)
+                        //     return;
+                        // }
+                        console.log(err1);
+                        callback("500", null)
+                        return;
+
+                    }
+
+                    return callback(null, res1.affectedRows)
+
+                })
+
+            }
+            client.release();
+        })
     })
 }
 
