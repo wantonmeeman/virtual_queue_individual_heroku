@@ -10,7 +10,40 @@ const database = require('./database');
 app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json())
-
+var schemaObj = {
+    arrival_rate: {
+        "type": "object",
+        "required": ["queue_id", "from", "duration"],
+        "properties": {
+            "queue_id": {
+                "type": "string",
+                "maxLength": 10,
+                "minLength": 10,
+                "pattern": '^[a-zA-Z0-9]*$'
+            },
+            "from": {
+                "type": "date-time",
+            },
+            "duration": {
+                "type": "integer",
+                "maximum": 1440,
+                "minimum": 1
+            }
+        }
+    },
+    server_available: {
+        "type": "object",
+        "required": ["queue_id"],
+        "properties": {
+            "queue_id": {
+                "type": "string",
+                "maxLength": 10,
+                "minLength": 10,
+                "pattern": '^[a-zA-Z0-9]*$'
+            }
+        }
+    }
+}
 /**
  * =====================================================================
  * ========================== CODE STARTS HERE =========================
@@ -50,18 +83,7 @@ app.use(express.json())
  */
 app.put('/company/server', function (req, res) {//Add JSON Schema Validation
 
-    var schema = {
-        "type": "object",
-        "required": ["queue_id"],
-        "properties": {
-            "queue_id": {
-                "type": "string",
-                "maxLength": 10,
-                "minLength": 10,
-                "pattern": '^[a-zA-Z0-9]*$'
-            }
-        }
-    };
+    let schema = schemaObj.server_available
 
     let errorStatusMsg;
 
@@ -122,33 +144,13 @@ app.put('/company/server', function (req, res) {//Add JSON Schema Validation
  * Company: Arrival Rate
  */
 app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validation
-    //Should we do json validation for query strings? or just normal validation
 
-    var schema = {
-        "type": "object",
-        "required": ["queue_id","from","duration"],
-        "properties": {
-            "queue_id": {
-                "type": "string",
-                "maxLength": 10,
-                "minLength": 10,
-                "pattern": '^[a-zA-Z0-9]*$'
-            },
-            "from": {
-                "type": "date-time",
-            },
-            "duration": {
-                "type": "integer",
-                "maximum": 1440,
-                "minimum": 1
-            }
-        }
-    };
+    let schema = schemaObj.arrival_rate
 
     let errorStatusMsg;
 
     req.query.duration = Number(req.query.duration)//Its a Query STRING. so we need to change this to int, or number if we want to have error handling
-    
+
     let validateStatus = jsonvalidator.validate(req.query, schema)//JSON Validation
 
     if (validateStatus.errors.length != 0) {//JSON Validation Handling
@@ -165,16 +167,21 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
                 } else if (validateStatus.errors[0].name == 'type') {
                     errorStatusMsg = "queueID is a not a String!"
                 }
-            break;//Add Case for from
+                break;
+            case 'instance.queue_id':
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "queueID is not in a Date-time format!"
+                }
+                break;
             case 'instance.duration':
-                if (validateStatus.errors[0].name == 'minimum'){
+                if (validateStatus.errors[0].name == 'minimum') {
                     errorStatusMsg = "duration is too low!"
                 } else if (validateStatus.errors[0].name == 'maximum') {
                     errorStatusMsg = "duration is too high!"
-                } else if (validateStatus.errors[0].name == 'type'){
+                } else if (validateStatus.errors[0].name == 'type') {
                     errorStatusMsg = "duration is not a integer!"
                 }
-            break;
+                break;
 
         }
         res.status(400).send({
@@ -182,40 +189,36 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
             code: "INVALID_QUERY_STRING"
         })
 
-    }else{
-        //2018-11-13T20:20:39 08:00
-        //will return a NaN
-        //So we remove the 08:00, the GMT portion 
-        //We can also replace the " " with a GMT String or something
-        //Adding Z to the end makes it parseable
-
-        req.query.from = Date.parse((req.query.from.split(' ')[0])+'Z')/1000
-
+    } else {
+        // console.log(req.query.from.replace(/ /g,''))
+        // Ask about + Value
+        //%2B
+        req.query.from = Date.parse(req.query.from) / 1000;
         database.arrivalRate(
             req.query.queue_id,
             req.query.from,
-            req.query.duration, 
+            req.query.duration,
             function (err, result) {
-            if (err == '404') {//If Q doesnt Exist
+                if (err == '404') {//If Q doesnt Exist
 
-                res.status(404).send({
-                    error: "Queue Id " + req.body.queue_id + " Not Found",
-                    code: "UNKNOWN_QUEUE"
-                })
+                    res.status(404).send({
+                        error: "Queue Id " + req.query.queue_id + " Not Found",
+                        code: "UNKNOWN_QUEUE"
+                    })
 
-            } else if (err != null) {//If Other error
+                } else if (err != null) {//If Other error
 
-                res.status(500).send({
-                    error: "Unable to establish connection with database",
-                    code: "UNEXPECTED_ERROR"
-                })
+                    res.status(500).send({
+                        error: "Unable to establish connection with database",
+                        code: "UNEXPECTED_ERROR"
+                    })
 
-            } else {//If Success
-                console.log("Array"+result)
-
-            }
-
-        })
+                } else {//If Success
+                    
+                    res.status(200).send(result)
+                    
+                }
+            })
     }
 })
 
