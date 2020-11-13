@@ -13,33 +13,24 @@ function serverAvailable(q_id, cb) {
     pool.connect((err, client, release) => {//1 Pool = 1 Client
 
         if (err) {//Error Handling for Pool
+            console.log(err)
             return cb('Error acquiring client', null)
         }
-        //Debugging
-
-        //client.query('TRUNCATE customers')// reset table
-        // client.query('SELECT * FROM customers', function (err, result) {
-        //     if (err) {
-        //         console.log(err)
-        //         return cb(err, null)
-        //     }
-        //     console.log(result.rows)
-        // })
-
+        
         //Find out if queue Exists -> Find out if queue is Empty -> Update customer in queue
-        client.query('SELECT queue_id FROM customers WHERE queue_id = $1', [q_id], function (err, result) {//0
+        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1::varchar(255))', [q_id], function (err, result) {//0
             if (err) {
                 console.log(err)
-                return cb(err, null)
+                return cb(err.stack, null)
             }
             if (result.rows.length == 0) {//Queue Doesnt exist
                 console.log("Q doesnt exist")
                 return cb("404", null)
             } else {
-                client.query('SELECT customer_id FROM customers WHERE served = false AND queue_id = $1 ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
+                client.query('SELECT customer_id FROM customers WHERE served = false AND queue_id = UPPER($1::varchar(255)) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
                     if (err1) {
                         console.log(err1)
-                        return cb(err1, null)
+                        return cb(err1.stack, null)
                     }
                     if (result1.rows.length == 0) {//Queue is Empty
                         console.log("Q is empty")
@@ -48,13 +39,14 @@ function serverAvailable(q_id, cb) {
                         client.query('UPDATE customers SET served = true WHERE customer_id = $1', [result1.rows[0].customer_id], function (err2, result2) {//Set served to true,2
                             if (err2) {
                                 console.log(err2)
-                                return cb(err2, null)
+                                return cb(err2.stack, null)
                             } else {//Success
                                 return cb(null, result1)
                             }
                         })
                     }
                 })
+                
             }
         })
 
@@ -72,28 +64,42 @@ function arrivalRate(q_id, from, duration, cb) {
         if (err) {//Error Handling for Pool
             return cb('Error acquiring client', null)
         }
+        // client.query('TRUNCATE queue CASCADE',function(err,result){
+        //     console.log(err)
+        // })
 
-        //client.query('TRUNCATE queue')
-        //client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('QUEUE12345',1234567890,'ACTIVE')`)  
-        //client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567890,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`)  
+        // client.query('TRUNCATE customers',function(err,result){
+        //     console.log(err)
+        // })
+       
+        
+        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('0000000000',9999999999,'ACTIVE')`)
+        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('zzzzzzzzzz',9999999999,'ACTIVE')`)
+        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('1111111111',9999999999,'ACTIVE')`)   
+        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('QUEUE12345',1234567890,'ACTIVE')`)  
+        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567890,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
+        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567891,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
+        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567892,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
+        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567893,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
 
-        client.query(`SELECT * FROM customers`, function (err, result) {
-            if (err) {
-                console.log(err)
-                return cb(err, null)
-            }
-            console.log(result.rows)
-        })
-        client.query(`SELECT * FROM queue`, function (err, result) {
-            if (err) {
-                console.log(err)
-                return cb(err, null)
-            }
-            console.log(result.rows)
-        })
+        // client.query(`SELECT * FROM customers`, function (err, result) {
+        //     if (err) {
+        //         console.log(err)
+        //         return cb(err, null)
+        //     }
+        //     console.log(result.rows)
+        // })
+
+        // client.query(`SELECT * FROM queue`, function (err, result) {
+        //     if (err) {
+        //         console.log(err)
+        //         return cb(err, null)
+        //     }
+        //     console.log(result.rows)
+        // })
 
 
-        client.query('SELECT queue_id FROM customers WHERE queue_id = $1', [q_id], function (err, result) {//change to from queue when fk is added
+        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1::varchar(255))', [q_id], function (err, result) {//change to from queue when fk is added
             if (err) {
                 console.log(err)
                 return cb(err, null)
@@ -108,7 +114,7 @@ function arrivalRate(q_id, from, duration, cb) {
                         console.log(err)
                         return cb(err, null)
                     } else {
-                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE (time_created BETWEEN $1 AND $2) AND queue_id = $3 GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
+                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE (time_created BETWEEN $1 AND $2) AND queue_id = UPPER($3::varchar(255)) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
                             if (err1) {
                                 console.log(err1)
                                 return cb(err1, null)
@@ -136,6 +142,7 @@ function arrivalRate(q_id, from, duration, cb) {
                         })
                     }
                 })
+                
             }
         })
     })
