@@ -44,6 +44,25 @@ var schemaObj = {
                 "pattern": '^[a-zA-Z0-9]*$'
             }
         }
+    },
+
+    join_check_queue: {
+        "type": "object",
+        "required": ["customer_id", "queue_id"],
+        "properties": {
+            "customer_id": {
+                "type": "integer",
+                "minimum": 1000000000,
+                "maximum": 9999999999
+            },
+            "queue_id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9]*$",
+                "minLength": 10,
+                "maxLength": 10
+
+            }
+        }
     }
 }
 /**
@@ -236,24 +255,7 @@ app.post('/customer/queue', function (req, res) {
     const customer_id = req.body.customer_id;
     const queue_id = req.body.queue_id;
 
-    var schema = {
-        "type": "object",
-        "required": ["customer_id", "queue_id"],
-        "properties": {
-            "customer_id": {
-                "type": "integer",
-                "minimum": 1000000000,
-                "maximum": 9999999999
-            },
-            "queue_id": {
-                "type": "string",
-                "pattern": "^[a-zA-Z0-9]*$",
-                "minLength": 10,
-                "maxLength": 10
-
-            }
-        }
-    };
+    let schema = schemaObj.join_check_queue;
 
     let errorStatusMsg;
     let validateStatus = jsonvalidator.validate(req.body, schema) // JSON Validation
@@ -315,46 +317,61 @@ app.post('/customer/queue', function (req, res) {
  * Customer: Check Queue
  */
 app.get('/customer/queue', function (req, res) {
-    const customer_id = req.query.customer;
-    const queue_id = req.query.queue;
+    const customer_id = req.query.customer_id;
+    const queue_id = req.query.queue_id;
+    let query = req.query
+    query["customer_id"] = parseInt(query["customer_id"])
 
-    var schema = {
-        "type": "object",
-        "required": ["customer_id", "queue_id"],
-        "properties": {
-            "customer_id": {
-                "type": "integer",
-                "minimum": 1000000000,
-                "maximum": 9999999999
-            },
-            "queue_id": {
-                "type": "string",
-                "pattern": "^[a-zA-Z0-9]*$",
-                "minLength": 10,
-                "maxLength": 10
-
-            }
-        }
-    };
+    let schema = schemaObj.join_check_queue;
 
     let errorStatusMsg;
 
-    let validateStatus = jsonvalidator.validate(req.body, schema) // JSON Validation
+    let validateStatus = jsonvalidator.validate(query, schema) // JSON Validation
+    console.log(validateStatus);
 
-    database.checkQueue(customer_id, queue_id, function (err, result) {
-        if (!err) {
-            res.status(200).send()
+    if (validateStatus.errors.length != 0) { // JSON Validation Handling
+        switch (validateStatus.errors[0].property) {
+            case 'instance.queue_id':
+                if (validateStatus.errors[0].name == 'pattern') { // Should we use switch case for this
+                    errorStatusMsg = "queueID has invalid characters"
+                } else if (validateStatus.errors[0].name == 'minLength') {
+                    errorStatusMsg = "queueID is too short!"
+                } else if (validateStatus.errors[0].name == 'maxLength') {
+                    errorStatusMsg = "queueID is too long!"
+                } else if (validateStatus.errors[0].name == 'required') {
+                    errorStatusMsg = "queueID is not in the body!"
+                } else if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "queueID is not a String!"
+                }
+                break;
 
-        } else if (err.code == '') {
-            console.log(err);
-            res.status(422).json({ error: `Customer ID should be 10 digits` })
-
-        } else {
-            console.log(err)
-            res.status(500).send('Internal Server Error')
+            case 'instance.customer_id':
+                if (validateStatus.errors[0].name == 'minimum') {
+                    errorStatusMsg = "customer_id is below 10 digits!"
+                } else if (validateStatus.errors[0].name == 'maximum') {
+                    errorStatusMsg = "customer_id is above 10 digits!"
+                } else if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "customer_id is not an integer!"
+                }
+                break;
 
         }
-    });
+        res.status(400).json({
+            error: errorStatusMsg,
+            code: "INVALID_QUERY_STRING"
+        })
+
+    } else {
+        database.checkQueue(customer_id, queue_id, function (err, result) {
+            if (!err) {
+                res.status(200).json(result)
+            } else {
+                console.log(err)
+                res.status(500).send('Internal Server Error')
+
+            }
+        });
+    }
 
 
 })

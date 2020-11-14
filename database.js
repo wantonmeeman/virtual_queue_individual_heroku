@@ -152,13 +152,13 @@ function joinQueue(customer_id, queue_id, cb) {
             return console.error('Error acquiring client', err.stack)
         }
 
-        client.query(`SELECT * FROM queue WHERE queue_id = $1 AND status = 'ACTIVE'`, [queue_id], function (err, result) {
+        client.query(`SELECT * FROM queue WHERE queue_id = $1 AND status = 'INACTIVE'`, [queue_id], function (err, result) {
             if (err) {
                 console.log(err)
                 return cb(err, null)
             }
 
-            if (result.rows.length == 0) {
+            if (result.rows.length == 1) {
                 return cb({ code: 'INACTIVE_QUEUE' }, null)
             } else {
                 client.query('SELECT * FROM customers WHERE customer_id = $1 AND queue_id = $2', [customer_id, queue_id], function (err, result) {
@@ -192,31 +192,62 @@ function joinQueue(customer_id, queue_id, cb) {
 
 
 // ****** CHECK QUEUE ******
-function checkQueue(customer_id, queue_id) {
+function checkQueue(customer_id, queue_id, cb) {
+    let total;
 
     pool.connect((err, client, release) => {
         if (err) { // Error Handling for Pool
             return console.error('Error acquiring client', err.stack)
         }
 
-        client.query('SELECT COUNT(*) FROM customers', function (err, result) {
+        client.query(`SELECT * FROM queue WHERE queue_id = $1;`, [queue_id], function (err, result) {     // return total in queue
             if (err) {
                 console.log(err)
                 return cb(err, null)
             }
-            console.log(result.rows);
 
-        })
-
-        client.query('SELECT COUNT(*) FROM customers WHERE customer_id = $1 AND queue_id = $2', [customer_id, queue_id], function (err, result) {
-            if (err) {
-                console.log(err)
-                return cb(err, null)
+            if (result.rows.length == 0) {
+                return cb(null, {
+                    "error": `Queue Id ${queue_id} Not Found`,
+                    "code": "UNKNOWN_QUEUE"
+                })
+            } else {
+                client.query(`SELECT COUNT(customer_id) "count" FROM customers WHERE queue_id = $1`, [queue_id], function (err, result) {     // return total in queue
+                    if (err) {
+                        console.log(err)
+                        return cb(err, null)
+                    } else {
+                        total = result.rows[0].count;
+                        console.log(total)
+                    }
+                    
+                    if (customer_id != null) {      // number of customers that are served (negative value) -> MISSED
+                        client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = true AND queue_id = $1 AND time_created > (SELECT time_created FROM customers WHERE customer_id = $2);', [queue_id, customer_id], function (err, result) {
+                            if (err) {
+                                console.log(err)
+                                return cb(err, null)
+                            }
+                            
+                            if (result.rows[0].count == 0) {        // number of customers that are not served (positive value)
+                                client.query('SELECT COUNT(customer_id) FROM customers WHERE served = false AND queue_id = $1 AND time_created < (SELECT time_created FROM customers WHERE customer_id = $2);', [queue_id, customer_id], function (err, result) {
+                                    if (err) {
+                                        console.log(err)
+                                        return cb(err, null)
+                                    }
+                                    
+                                    return cb(null, { "total": total, "ahead": result.rows[0].count, "status": "ACTIVE" })
+                                })                        
+                                
+                            } else {
+                                return cb(null, { "total": total, "ahead": (0 - result.rows[0].count), "status": "INACTIVE" })
+                            }
+                        })
+                    } else {
+                        return cb(null, { "total": total, "status": "ACTIVE"})
+                    }
+                })
             }
-            console.log(result.rows);
-
         })
-
     })
 
 }
@@ -239,6 +270,8 @@ function closeDatabaseConnections() {
 module.exports = {
     arrivalRate,
     serverAvailable,
+    joinQueue,
+    checkQueue,
     resetTables,
     closeDatabaseConnections,
 };
