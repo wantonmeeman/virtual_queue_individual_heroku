@@ -25,6 +25,8 @@ var schemaObj = {
             },
             "from": {
                 "type": "date-time",
+                //"pattern":'(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})[+-](\d{2})\:(\d{2})'
+                "pattern":/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/
             },
             "duration": {
                 "type": "integer",
@@ -60,7 +62,40 @@ var schemaObj = {
                 "pattern": "^[a-zA-Z0-9]*$",
                 "minLength": 10,
                 "maxLength": 10
-
+            }
+        }
+    },
+    
+    create_queue: {
+        "type": "object",
+        "required": ["company_id", "queue_id"],
+        "properties": {
+            "company_id": {
+                "type": "integer",
+                "minLength": 10,
+                "maxLength": 10,
+                "pattern": "^[\d{10}]"
+            },
+            "queue_id": {
+                "type": "String",
+                "minLength": 1000000000,
+                "maxLength": 9999999999,
+                "pattern": "^[0-9A-Za-z]*$"
+            }
+        }
+    },
+    update_queue: {
+        "type": "object",
+        "required": ["queue_id", "status"],
+        "properties": {
+            "queue_id": {
+                "type": "String",
+                "minLength": 1000000000,
+                "maxLength": 9999999999,
+                "pattern": "^[0-9A-Za-z]*$"
+            },
+            "status": {
+                "type": "String",
             }
         }
     }
@@ -73,6 +108,7 @@ var schemaObj = {
 
 /**
  * ========================== SETUP APP =========================
+ * CHER SAID WE CAN IGNORE THIS
  */
 
 /**
@@ -86,6 +122,11 @@ var schemaObj = {
 /**
  * Reset API
  */
+// app.post('/reset',function(req,res){//Idk if this is the right way to do it.
+//     database.resetTables()
+//     .then((results)=>console.log(results))
+//     .catch((err)=>console.log(err))
+// })
 
 /**
  * ========================== COMPANY =========================
@@ -94,10 +135,134 @@ var schemaObj = {
 /**
  * Company: Create Queue
  */
+app.post('/company/create', function (req, res) {
+
+
+    var schema = schemaObj.create_queue;
+
+    let errorStatusMsg;
+    let validateStatus = jsonvalidator.validate(req.body, schema) //JSON validation
+    if (validateStatus.errors.length != 0) {
+        switch (validateStatus.errors[0].property) {
+            case 'instance.company_id':
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "CompanyID is not a Integer"
+                } else if (validateStatus.errors[0].name == 'minLength') {
+                    errorStatusMsg = "CompanyID is too short"
+                } else if (validateStatus.errors[0].name == 'maxLength') {
+                    errorStatusMsg = "CompanyID is too long"
+                } else if (validateStatus.errors[0].name == 'required') {
+                    errorStatusMsg = "CompanyID is not in the body"
+                }
+                break;
+            case 'instance.queue_id':
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "QueueID is not a String"
+                } else if (validateStatus.errors[0].name == 'minLength') {
+                    errorStatusMsg = "QueueID is too short"
+                } else if (validateStatus.errors[0].name == 'maxLength') {
+                    errorStatusMsg = "QueueID is too long"
+                } else if (validateStatus.errors[0].name == 'pattern') {
+                    errorStatusMsg = "QueueID has invalid characters"
+                } else if (validateStatus.errors[0].name == 'required') {
+                    errorStatusMsg = "QueueID is not in the body"
+                }
+                break;
+        }
+        console.log(errorStatusMsg)
+        res.status(400).send({
+            error: errorStatusMsg,
+            code: "INVALID_JSON_BODY"
+        })
+    } else {
+        var companyid = req.body.company_id;
+        var queueid = req.body.queue_id;
+        database.CreateQueue(companyid, queueid, function (err, result) {
+            if (err) {
+                console.log(err);
+                if (err == 422) {
+                    res.status(422).send({
+                        error: "Queue Id '" + queueid + "' already exists",
+                        code: "QUEUE_EXISTS"
+                    })
+                } else {
+                    res.status(500).send({
+                        error: "Unable to establish connection with database",
+                        code: "UNEXPECTED_ERROR"
+                    })
+                }
+            } else {
+                res.status(201).send({
+                    message: "Queue Created"
+                })
+            }
+        })
+    }
+})
+
 
 /**
  * Company: Update Queue
  */
+app.put('/company/update', function (req, res) {
+    var schema = schemaObj.update_queue;
+    var queueid = req.body.queue_id;
+    var status = req.body.status;
+
+    let errorStatusMsg;
+    let validateStatus = jsonvalidator.validate(req.body, schema);
+    if (validateStatus.errors.length != 0) {
+        switch (validateStatus.errors[0].property) {
+            case "instance.queue_id":
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "QueueID is not a String"
+                } else if (validateStatus.errors[0].name == 'minLength') {
+                    errorStatusMsg = "QueueID is too short"
+                } else if (validateStatus.errors[0].name == 'maxLength') {
+                    errorStatusMsg = "QueueID is too long"
+                } else if (validateStatus.errors[0].name == 'pattern') {
+                    errorStatusMsg = "QueueID has invalid characters"
+                } else if (validateStatus.errors[0].name == 'required') {
+                    errorStatusMsg = "QueueID is not in the body"
+                }
+                break;
+            case "instance.status":
+                if (validateStatus.errors[0].name == 'type') {
+                    errorStatusMsg = "Status is not a String"
+                }
+        }
+        if(status != "ACTIVATE" || "DEACTIVATE") {
+            errorStatusMsg = "Staus must be either 'ACTIVATE' or 'DEACTIVATE'"
+        }
+
+        res.status(400).send({
+            error: errorStatusMsg,
+            code: "INVALID_QUERY sTRING"
+        })
+    }else {
+        database.update_queue(queueid, status, function(error, result) {
+            if(error) {
+                if(error == "404") {
+                    res.status(404).send({
+                        error: "The queueID '" + queueid + "' cannot be found",
+                        code: "UNKNOWN_QUEUE"
+                    })
+                } else {
+                    res.status(500).send({
+                        error:"Unable to establish connection with database",
+                        code: "UNEXPECTED_ERROR"
+                    })
+                }
+
+            }else {
+                res.status(200).send({
+                    message: "Queue Updated"
+                })
+            }
+        })
+    }
+    })
+
 
 /**
  * Company: Server Available
@@ -123,6 +288,7 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
         } else if (validateStatus.errors[0].name == 'required') {
             errorStatusMsg = "queueID is not in the body!"
         }
+        console.log(errorStatusMsg)
         res.status(400).send({//If JSON Validation returns false
             error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
@@ -139,7 +305,7 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
                 })
 
             } else if (err != null) {//If Other error
-
+                console.trace(err);
                 res.status(500).send({
                     error: "Unable to establish connection with database",
                     code: "UNEXPECTED_ERROR"
@@ -147,9 +313,10 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
 
             } else {//If Success
                 if (result.rows.length != 0) {
-                    res.status(200).send(
-                        result.rows[0]//This is already a JSON
-                    )
+                    console.log(result.rows[0])
+                    res.status(200).send({
+                        customer_id : parseInt(result.rows[0].customer_id)//This is already a JSON
+                    })
                 } else {
                     res.status(200).send({
                         customer_id: 0
@@ -177,7 +344,7 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
     if (validateStatus.errors.length != 0) {//JSON Validation Handling
         switch (validateStatus.errors[0].property) {
             case 'instance.queue_id':
-                if (validateStatus.errors[0].name == 'pattern') {//Should we use switch case for this
+                if (validateStatus.errors[0].name == 'pattern') {//Test fires queue id doesnt exists for some reason
                     errorStatusMsg = "queueID has invalid characters"
                 } else if (validateStatus.errors[0].name == 'minLength') {
                     errorStatusMsg = "queueID is too short!"
@@ -189,11 +356,7 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
                     errorStatusMsg = "queueID is a not a String!"
                 }
                 break;
-            case 'instance.queue_id':
-                if (validateStatus.errors[0].name == 'type') {
-                    errorStatusMsg = "queueID is not in a Date-time format!"
-                }
-                break;
+            
             case 'instance.duration':
                 if (validateStatus.errors[0].name == 'minimum') {
                     errorStatusMsg = "duration is too low!"
@@ -204,14 +367,23 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
                 }
                 break;
 
+            case 'instance.from':
+                    if (validateStatus.errors[0].name == 'type') {
+                        errorStatusMsg = "from is not in a Date-time format!"
+                    }else if (validateStatus.errors[0].name == 'pattern') {
+                        errorStatusMsg = "from is not in a correct format!"
+                    }
+                break;
+
         }
+        console.log(validateStatus.errors)
+        console.log(req.query.from)
         res.status(400).send({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
         })
 
     } else {
-        // console.log(req.query.from.replace(/ /g,''))
         // Ask about + Value
         //%2B
         req.query.from = Date.parse(req.query.from) / 1000;
