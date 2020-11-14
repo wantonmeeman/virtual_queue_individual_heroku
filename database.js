@@ -198,7 +198,7 @@ function joinQueue(customer_id, queue_id, cb) {
 
 
 // ****** CREATE QUEUE ******
-function CreateQueue(c_id, q_id, callback) {
+function createQueue(c_id, q_id, callback) {
     console.log(c_id, q_id);
     pool.connect((err, client, release) => {
         if (err) {
@@ -243,7 +243,7 @@ function CreateQueue(c_id, q_id, callback) {
 }
 
 // ****** UPDATE QUEUE ******
-function UpdateQueue(q_id, status, callback) {
+function updateQueue(q_id, status, callback) {
     console.log(q_id, status);
     pool.connect((err, client, release) => {
         if (err) {
@@ -356,7 +356,8 @@ module.exports = {
     serverAvailable,
     joinQueue,
     checkQueue,
-    CreateQueue,
+    createQueue,
+    updateQueue,
     resetTables,
     closeDatabaseConnections,
 };
