@@ -18,7 +18,7 @@ function serverAvailable(q_id, cb) {
         }
 
         // Find out if Queue exists -> Find out if Queue is empty -> Update Customer in Queue
-        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1::varchar(255))', [q_id], function (err, result) {//0
+        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1)', [q_id], function (err, result) {//0
             if (err) {
                 console.log(err)
                 return cb(err.stack, null)
@@ -27,7 +27,7 @@ function serverAvailable(q_id, cb) {
                 console.log("Q doesnt exist")
                 return cb("404", null)
             } else {
-                client.query('SELECT customer_id FROM customers WHERE served = false AND queue_id = UPPER($1::varchar(255)) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
+                client.query('SELECT customer_id FROM customers WHERE served = false AND queue_id = UPPER($1) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
                     if (err1) {
                         console.log(err1)
                         return cb(err1.stack, null)
@@ -49,9 +49,7 @@ function serverAvailable(q_id, cb) {
 
             }
         })
-
-
-
+        client.release()
 
     })
 }
@@ -65,7 +63,7 @@ function arrivalRate(q_id, from, duration, cb) {
             return cb('Error acquiring client', null)
         }
 
-        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1::varchar(255))', [q_id], function (err, result) {//change to from queue when fk is added
+        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1)', [q_id], function (err, result) {//change to from queue when fk is added
             if (err) {
                 console.log(err)
                 return cb(err, null)
@@ -81,7 +79,7 @@ function arrivalRate(q_id, from, duration, cb) {
                         console.log(err)
                         return cb(err, null)
                     } else {
-                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE (time_created BETWEEN $1 AND $2) AND queue_id = UPPER($3::varchar(255)) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
+                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE (time_created BETWEEN $1 AND $2) AND queue_id = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
                             if (err1) {
                                 console.log(err1)
                                 return cb(err1, null)
@@ -112,6 +110,8 @@ function arrivalRate(q_id, from, duration, cb) {
 
             }
         })
+        client.release();
+        
     })
 }
 
@@ -137,7 +137,7 @@ function joinQueue(c_id, q_id, cb) {
                 return cb({ code: 'INACTIVE_QUEUE' }, null)
             } else {
                 // check if this customer is already in this queue
-                client.query('SELECT * FROM customers WHERE customer_id = $1 AND queue_id = $2', [c_id, q_id], function (err, result) {
+                client.query('SELECT * FROM customers WHERE customer_id = $1 AND queue_id = UPPER($2)', [c_id, q_id], function (err, result) {
                     if (err) {
                         console.log(err)
                         return cb(err, null)

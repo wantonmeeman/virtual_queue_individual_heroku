@@ -314,6 +314,8 @@ app.put('/company/update', function (req, res) {
  * Company: Server Available
  */
 app.put('/company/server', function (req, res) { // Add JSON Schema Validation
+    const queue_id = req.body.queue_id;
+
     let schema = schemaObj.server_available
     let errorStatusMsg;
     let validateStatus = validate(req.body, schema);
@@ -328,11 +330,11 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
         })
 
     } else {
-        database.serverAvailable(req.body.queue_id, function (err, result) {
+        database.serverAvailable(queue_id, function (err, result) {
             if (err == '404') { // If Queue does not exist
 
                 res.status(404).send({
-                    error: "Queue Id " + req.body.queue_id + " Not Found",
+                    error: "Queue Id " + queue_id + " Not Found",
                     code: "UNKNOWN_QUEUE"
                 })
 
@@ -343,7 +345,7 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
                     code: "UNEXPECTED_ERROR"
                 })
 
-            } else {//If Success
+            } else { // If Success
                 if (result.rows.length != 0) {
                     console.log(result.rows[0])
                     res.status(200).send({
@@ -364,11 +366,12 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
  * Company: Arrival Rate
  */
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
+    const queue_id = req.query.queue_id;
+    const duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
+    const from = req.query.from = Date.parse(req.query.from) / 1000;
 
     let schema = schemaObj.arrival_rate
     let errorStatusMsg;
-
-    req.query.duration = Number(req.query.duration) // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
     let validateStatus = validate(req.query, schema);
 
     if (validateStatus.errors.length != 0) {//JSON Validation Handling
@@ -384,12 +387,11 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
     } else {
         // Ask about + Value
         // %2B
-        req.query.from = Date.parse(req.query.from) / 1000;
-        database.arrivalRate(req.query.queue_id, req.query.from, req.query.duration, function (err, result) {
+        database.arrivalRate(queue_id, from, duration, function (err, result) {
             if (err == '404') { // If Q doesnt exist
 
                 res.status(404).send({
-                    error: "Queue Id " + req.query.queue_id + " Not Found",
+                    error: "Queue Id " + queue_id + " Not Found",
                     code: "UNKNOWN_QUEUE"
                 })
 
