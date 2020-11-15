@@ -10,20 +10,20 @@ const pool = new Pool({
 })
 
 function serverAvailable(q_id, cb) {
-    pool.connect((err, client, release) => {//1 Pool = 1 Client
+    pool.connect((err, client, release) => { // 1 Pool = 1 Client
 
-        if (err) {//Error Handling for Pool
+        if (err) { // Error Handling for Pool
             console.log(err)
             return cb('Error acquiring client', null)
         }
-        
-        //Find out if queue Exists -> Find out if queue is Empty -> Update customer in queue
+
+        // Find out if Queue exists -> Find out if Queue is empty -> Update Customer in Queue
         client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1::varchar(255))', [q_id], function (err, result) {//0
             if (err) {
                 console.log(err)
                 return cb(err.stack, null)
             }
-            if (result.rows.length == 0) {//Queue Doesnt exist
+            if (result.rows.length == 0) { // Queue does not exist
                 console.log("Q doesnt exist")
                 return cb("404", null)
             } else {
@@ -32,7 +32,7 @@ function serverAvailable(q_id, cb) {
                         console.log(err1)
                         return cb(err1.stack, null)
                     }
-                    if (result1.rows.length == 0) {//Queue is Empty
+                    if (result1.rows.length == 0) { // Queue is empty
                         console.log("Q is empty")
                         return cb(null, result1)
                     } else {
@@ -40,13 +40,13 @@ function serverAvailable(q_id, cb) {
                             if (err2) {
                                 console.log(err2)
                                 return cb(err2.stack, null)
-                            } else {//Success
+                            } else { // Success
                                 return cb(null, result1)
                             }
                         })
                     }
                 })
-                
+
             }
         })
 
@@ -59,56 +59,23 @@ function serverAvailable(q_id, cb) {
 function arrivalRate(q_id, from, duration, cb) {
     //End Date to Unix
     var endDate = from + (duration * 60)
-    pool.connect((err, client, release) => {//1 Pool = 1 Client
+    pool.connect((err, client, release) => { // 1 Pool = 1 Client
 
-        if (err) {//Error Handling for Pool
+        if (err) { // Error Handling for Pool
             return cb('Error acquiring client', null)
         }
-        // client.query('TRUNCATE queue CASCADE',function(err,result){
-        //     console.log(err)
-        // })
-
-        // client.query('TRUNCATE customers',function(err,result){
-        //     console.log(err)
-        // })
-       
-        
-        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('0000000000',9999999999,'ACTIVE')`)
-        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('zzzzzzzzzz',9999999999,'ACTIVE')`)
-        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('1111111111',9999999999,'ACTIVE')`)   
-        // client.query(`INSERT INTO queue(queue_id,company_id,status) VALUES('QUEUE12345',1234567890,'ACTIVE')`)  
-        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567890,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
-        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567891,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
-        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567892,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
-        // client.query(`INSERT INTO customers(customer_id,queue_id,time_created,served) VALUES(1234567893,'QUEUE12345',`+((Date.now()/1000)|0)+`,false)`) 
-
-        // client.query(`SELECT * FROM customers`, function (err, result) {
-        //     if (err) {
-        //         console.log(err)
-        //         return cb(err, null)
-        //     }
-        //     console.log(result.rows)
-        // })
-
-        // client.query(`SELECT * FROM queue`, function (err, result) {
-        //     if (err) {
-        //         console.log(err)
-        //         return cb(err, null)
-        //     }
-        //     console.log(result.rows)
-        // })
-
 
         client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1::varchar(255))', [q_id], function (err, result) {//change to from queue when fk is added
             if (err) {
                 console.log(err)
                 return cb(err, null)
             }
-            if (result.rows.length == 0) {//Queue Doesnt exist
+            if (result.rows.length == 0) { // Queue does not exist
                 console.log("Q doesnt exist")
                 return cb("404", null)
-            } else {//We dont need the above SQL statement's result
-                //Create TimeStamp using the query, we can also use for loop
+            } else {
+                // We don't need the above SQL statement's result
+                // Create Timestamp using the query, we can also use for loop
                 client.query(`select generate_series($1::bigint,$2::bigint) as timestamp `, [from, endDate], function (err, result) {
                     if (err) {
                         console.log(err)
@@ -142,42 +109,45 @@ function arrivalRate(q_id, from, duration, cb) {
                         })
                     }
                 })
-                
+
             }
         })
     })
 }
 
 // ****** JOIN QUEUE ******
-function joinQueue(customer_id, queue_id, cb) {
+function joinQueue(c_id, q_id, cb) {
 
-    console.log(customer_id)
-    console.log(queue_id)
+    console.log(c_id)
+    console.log(q_id)
 
     pool.connect((err, client, release) => {
         if (err) { // Error Handling for Pool
             return console.error('Error acquiring client', err.stack)
         }
 
-        client.query(`SELECT * FROM queue WHERE queue_id = $1 AND status = 'INACTIVE'`, [queue_id], function (err, result) {
+        // Check if queue is inactive
+        client.query(`SELECT * FROM queue WHERE queue_id = $1 AND status = 'INACTIVE'`, [q_id], function (err, result) {
             if (err) {
                 console.log(err)
                 return cb(err, null)
             }
 
-            if (result.rows.length == 1) {
+            if (result.rows.length == 1) {  // if result is not null, queue is inactive
                 return cb({ code: 'INACTIVE_QUEUE' }, null)
             } else {
-                client.query('SELECT * FROM customers WHERE customer_id = $1 AND queue_id = $2', [customer_id, queue_id], function (err, result) {
+                // check if this customer is already in this queue
+                client.query('SELECT * FROM customers WHERE customer_id = $1 AND queue_id = $2', [c_id, q_id], function (err, result) {
                     if (err) {
                         console.log(err)
                         return cb(err, null)
                     }
 
-                    if (result.rows.length >= 1) {
+                    if (result.rows.length >= 1) {  // if there are results, customer_id is already in given queue (DUPLICATE)
                         return cb({ code: 'ER_DUP_ENTRY' }, null)
                     } else {
-                        client.query('INSERT INTO customers (customer_id, queue_id, time_created) VALUES($1, $2, $3)', [customer_id, queue_id, ((Date.now() / 1000) | 0)], function (err, result) {
+                        // if no results, add customer into given queue
+                        client.query('INSERT INTO customers (customer_id, queue_id, time_created) VALUES($1, $2, $3)', [c_id, q_id, ((Date.now() / 1000) | 0)], function (err, result) {
                             if (err) {
                                 console.log(err);
                                 return cb(err, null)
@@ -191,10 +161,86 @@ function joinQueue(customer_id, queue_id, cb) {
             }
         })
 
-
+        client.release();
 
     })
 }
+
+
+
+// ****** CHECK QUEUE ******
+function checkQueue(c_id, q_id, cb) {
+    let total;
+
+    pool.connect((err, client, release) => {
+        if (err) { // Error Handling for Pool
+            return console.error('Error acquiring client', err.stack)
+        }
+
+        client.query(`SELECT * FROM queue WHERE UPPER(queue_id) = UPPER($1);`, [q_id], function (err, result) {     // check if queue exists
+            if (err) {
+                console.log(err)
+                return cb(err, null)
+            }
+
+            if (result.rows.length == 0) {
+                return cb({
+                    "error": `Queue Id ${q_id} Not Found`,
+                    "code": "UNKNOWN_QUEUE"
+                }, null)
+
+            } else {
+                // total no. of ppl that is still in queue (excluding those have missed the queue/already served)
+                // COALESCE (return first non null value, if there are no served customers in queue (null), set it to 0)
+                client.query(`SELECT COUNT(customer_id) "count" FROM customers WHERE UPPER(queue_id) = UPPER($1) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($2) AND served = true ORDER BY row_no DESC LIMIT 1), 0));`, [q_id, q_id], function (err, result) {
+                    if (err) {
+                        console.log(err)
+                        return cb(err, null)
+                    } else {
+                        total = parseInt(result.rows[0].count);
+                    }
+
+                    if (c_id != null) {
+                        // (if customer_id is provided then run)
+                        // number of customers that are served (negative value) -> MISSED
+                        // select no. of customers that are served and row no > given row c_id (check if there are people that join later but already served)
+                        client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = true AND UPPER(queue_id) = UPPER($1) AND row_no > (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3));', [q_id, c_id, q_id], function (err, result) {
+                            if (err) {
+                                console.log(err)
+                                return cb(err, null)
+                            }
+
+                            if (result.rows[0].count == 0) {
+                                // (if count is 0, customer )  
+                                // number of customers that are not served (positive value)
+                                // select no. of customers that are served and row no < given row c_id (count no. of people that join before and are served)
+                                client.query('SELECT COUNT(customer_id) FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) AND row_no < (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3)) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($4) AND served = true ORDER BY row_no DESC LIMIT 1), 0));', [q_id, c_id, q_id, q_id], function (err, result) {
+                                    if (err) {
+                                        console.log(err)
+                                        return cb(err, null)
+                                    }
+
+                                    return cb(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
+                                })
+
+                            } else {
+                                // return cb(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
+
+                                let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE
+                                return cb(null, { "total": total, "ahead": -1, "status": status })
+                            }
+                        })
+                    } else {
+                        return cb(null, { "total": total, "status": "ACTIVE" })
+                    }
+                })
+            }
+        })
+        client.release();
+    })
+
+}
+
 
 
 // ****** CREATE QUEUE ******
@@ -259,8 +305,8 @@ function updateQueue(q_id, status, callback) {
                     return callback(err1, null)
                 }
             } else {
-                client.query("UPDATE queue SET status = $1 WHERE queue_id = $2", [status, q_id], function(err2, res2) {
-                    if(err) {
+                client.query("UPDATE queue SET status = $1 WHERE queue_id = $2", [status, q_id], function (err2, res2) {
+                    if (err) {
                         return callback(err2, null);
                     }
                     return callback(null, res2.affectedRows)
@@ -273,69 +319,6 @@ function updateQueue(q_id, status, callback) {
 }
 
 
-
-
-// ****** CHECK QUEUE ******
-function checkQueue(customer_id, queue_id, cb) {
-    let total;
-
-    pool.connect((err, client, release) => {
-        if (err) { // Error Handling for Pool
-            return console.error('Error acquiring client', err.stack)
-        }
-
-        client.query(`SELECT * FROM queue WHERE queue_id = $1;`, [queue_id], function (err, result) {     // return total in queue
-            if (err) {
-                console.log(err)
-                return cb(err, null)
-            }
-
-            if (result.rows.length == 0) {
-                return cb(null, {
-                    "error": `Queue Id ${queue_id} Not Found`,
-                    "code": "UNKNOWN_QUEUE"
-                })
-            } else {
-                client.query(`SELECT COUNT(customer_id) "count" FROM customers WHERE queue_id = $1`, [queue_id], function (err, result) {     // return total in queue
-                    if (err) {
-                        console.log(err)
-                        return cb(err, null)
-                    } else {
-                        total = result.rows[0].count;
-                        console.log(total)
-                    }
-                    
-                    if (customer_id != null) {      // number of customers that are served (negative value) -> MISSED
-                        client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = true AND queue_id = $1 AND time_created > (SELECT time_created FROM customers WHERE customer_id = $2);', [queue_id, customer_id], function (err, result) {
-                            if (err) {
-                                console.log(err)
-                                return cb(err, null)
-                            }
-                            
-                            if (result.rows[0].count == 0) {        // number of customers that are not served (positive value)
-                                client.query('SELECT COUNT(customer_id) FROM customers WHERE served = false AND queue_id = $1 AND time_created < (SELECT time_created FROM customers WHERE customer_id = $2);', [queue_id, customer_id], function (err, result) {
-                                    if (err) {
-                                        console.log(err)
-                                        return cb(err, null)
-                                    }
-                                    
-                                    return cb(null, { "total": total, "ahead": result.rows[0].count, "status": "ACTIVE" })
-                                })                        
-                                
-                            } else {
-                                return cb(null, { "total": total, "ahead": (0 - result.rows[0].count), "status": "INACTIVE" })
-                            }
-                        })
-                    } else {
-                        return cb(null, { "total": total, "status": "ACTIVE"})
-                    }
-                })
-            }
-        })
-    })
-
-}
-
 function resetTables() {
     /**
      * return a promise that resolves when the database is successfully reset, and rejects if there was any error.
@@ -343,12 +326,13 @@ function resetTables() {
 }
 
 function closeDatabaseConnections() {
-    pool.end()
-        .then(() => console.log('ENDED'))
-        .catch((err) => console.log(err))
     /**
      * return a promise that resolves when all connection to the database is successfully closed, and rejects if there was any error.
      */
+    pool.end()
+    .then(() => console.log('ENDED'))
+    .catch((err) => console.log(err))
+
 }
 
 module.exports = {
@@ -358,6 +342,6 @@ module.exports = {
     checkQueue,
     createQueue,
     updateQueue,
-    resetTables,
+    // resetTables,
     closeDatabaseConnections,
 };
