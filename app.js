@@ -72,14 +72,14 @@ var schemaObj = {
         "properties": {
             "company_id": {
                 "type": "integer",
-                "minLength": 10,
-                "maxLength": 10,
+                "minLength": 1000000000,
+                "maxLength": 9999999999,
                 "pattern": "^[\d{10}]"
             },
             "queue_id": {
                 "type": "String",
-                "minLength": 1000000000,
-                "maxLength": 9999999999,
+                "minLength": 10,
+                "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
             }
         }
@@ -87,16 +87,13 @@ var schemaObj = {
 
     update_queue: {
         "type": "object",
-        "required": ["queue_id", "status"],
+        "required": ["queue_id"],
         "properties": {
             "queue_id": {
                 "type": "String",
-                "minLength": 1000000000,
-                "maxLength": 9999999999,
+                "minLength": 10,
+                "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
-            },
-            "status": {
-                "type": "String",
             }
         }
     }
@@ -220,7 +217,7 @@ function checkErrorMsg(validateStatus) {
 /**
  * Company: Create Queue
  */
-app.post('/company/create', function (req, res) {
+app.post('/company/queue', function (req, res) {
     const company_id = req.body.company_id;
     const queue_id = req.body.queue_id;
 
@@ -265,28 +262,33 @@ app.post('/company/create', function (req, res) {
 /**
  * Company: Update Queue
  */
-app.put('/company/update', function (req, res) {
+app.put('/company/queue', function (req, res) {
     const queue_id = req.query.queue_id;
     const status = req.body.status;
-
+    
     let schema = schemaObj.update_queue;
     let errorStatusMsg;
-    let validateStatus = validate(req.body, schema);
+    let validateStatus = validate(req.query, schema);
+    
+    
+    if (status != "ACTIVATE" && status != "DEACTIVATE") {
 
-    if (validateStatus.errors.length != 0) {
+        res.status(400).send({
+            error: "Status must be either 'ACTIVATE' or 'DEACTIVATE'",
+            code: "INVALID_QUERY_STRING"
+        })
+    }else if (validateStatus.errors.length != 0) {
         errorStatusMsg = checkErrorMsg(validateStatus);
-
-        if (status != "ACTIVATE" || "DEACTIVATE") {
-            errorStatusMsg = "Status must be either 'ACTIVATE' or 'DEACTIVATE'"
-        }
 
         res.status(400).send({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
         })
 
+
     } else {
         database.updateQueue(queue_id, status, function (error, result) {
+            console.log(queue_id, status)
             if (error) {
                 if (error == "404") {
                     res.status(404).send({
@@ -463,7 +465,7 @@ app.post('/customer/queue', function (req, res) {
 app.get('/customer/queue', function (req, res) {
     const customer_id = req.query.customer_id;
     const queue_id = req.query.queue_id;
-    
+
     let query = req.query
     query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
 
