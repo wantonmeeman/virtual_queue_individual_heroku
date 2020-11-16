@@ -357,8 +357,8 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
                 break;
 
         }
-        console.log(validateStatus.errors)
-        console.log(req.query.from)
+        //console.log(validateStatus.errors)
+        //console.log(req.query.from)
         res.status(400).send({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
@@ -381,7 +381,7 @@ app.get('/company/arrival_rate', function (req, res) {//Add JSON Schema Validati
                     })
 
                 } else if (err != null) {//If Other error
-
+                    console.log(err)
                     res.status(500).send({
                         error: "Unable to establish connection with database",
                         code: "UNEXPECTED_ERROR"
