@@ -266,7 +266,7 @@ app.post('/company/create', function (req, res) {
  * Company: Update Queue
  */
 app.put('/company/update', function (req, res) {
-    const queue_id = req.body.queue_id;
+    const queue_id = req.query.queue_id;
     const status = req.body.status;
 
     let schema = schemaObj.update_queue;
