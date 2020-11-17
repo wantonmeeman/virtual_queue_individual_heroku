@@ -298,12 +298,11 @@ function updateQueue(q_id, status, callback) {
         }
 
         client.query("SELECT queue_id FROM queue WHERE queue_id = $1", [q_id], function (err1, res1) {
-            if (err1) {
-                if (res1.rows.length = 0) {
-                    return callback("404", null)
-                } else {
-                    return callback(err1, null)
-                }
+            console.log(res1.rows.length)
+            if (res1.rows.length == 0) {
+                return callback("404", null)
+            }else if (err1) {
+                return callback(err1, null)
             } else {
                 client.query("UPDATE queue SET status = $1 WHERE queue_id = $2", [status, q_id], function (err2, res2) {
                     if (err) {
