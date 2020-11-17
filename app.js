@@ -101,7 +101,7 @@ var schemaObj = {
 
 function checkErrorMsg(validateStatus) {
     var errorName = validateStatus.errors[0].name;
-    
+
     switch (validateStatus.errors[0].property) {
         // COMPANY_ID
         case 'instance.company_id':
@@ -205,11 +205,11 @@ function checkErrorMsg(validateStatus) {
 /**
  * Reset API
  */
-// app.post('/reset',function(req,res){//Idk if this is the right way to do it.
-//     database.resetTables()
-//     .then((results)=>console.log(results))
-//     .catch((err)=>console.log(err))
-// })
+app.post('/reset',function(req,res){//Idk if this is the right way to do it.
+    database.resetTables()
+    .then((results)=>console.log(results))
+    .catch((err)=>console.log(err))
+})
 /* 
 app.post('/reset', function (req, res) {
     database.resetTables(function (err, result) {

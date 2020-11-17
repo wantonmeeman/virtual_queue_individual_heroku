@@ -328,12 +328,13 @@ function resetTables() {
             return callback(err, null)
         }
 
-        client //Promise Method
+        return client //Promise Method
         .query('TRUNCATE TABLE customers, queue;')
         .then(result => console.log(result.rows))
+        .then(client.release())
         .catch(e => console.error(e.stack))
 
-        client.release();
+        
     })
 }
 
@@ -354,6 +355,6 @@ module.exports = {
     checkQueue,
     createQueue,
     updateQueue,
-    // resetTables,
+     resetTables,
     closeDatabaseConnections,
 };
