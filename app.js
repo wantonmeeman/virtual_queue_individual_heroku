@@ -207,8 +207,9 @@ function checkErrorMsg(validateStatus) {
  */
 app.post('/reset',function(req,res){//Idk if this is the right way to do it.
     database.resetTables()
-    .then((results)=>console.log(results))
-    .catch((err)=>console.log(err))
+    .then(res.status(200))
+    .catch((err) => console.log(err))
+    
 })
 /* 
 app.post('/reset', function (req, res) {
