@@ -101,7 +101,7 @@ var schemaObj = {
 
 function checkErrorMsg(validateStatus) {
     var errorName = validateStatus.errors[0].name;
-
+    
     switch (validateStatus.errors[0].property) {
         // COMPANY_ID
         case 'instance.company_id':
@@ -141,7 +141,7 @@ function checkErrorMsg(validateStatus) {
             } else if (errorName == 'minLength') {
                 errorStatusMsg = "queue_id is too short!"
 
-            } else if (gi == 'maxLength') {
+            } else if (errorName == 'maxLength') {
                 errorStatusMsg = "queue_id is too long!"
 
             } else if (errorName == 'pattern') {
