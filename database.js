@@ -328,7 +328,7 @@ function resetTables() {
             return callback(err, null)
         }
 
-        return client //Promise Method
+        return client // Promise Method
         .query('TRUNCATE TABLE customers, queue;')
         .then(result => console.log(result.rows))
         .then(client.release())

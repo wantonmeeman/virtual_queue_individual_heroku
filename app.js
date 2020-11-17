@@ -31,7 +31,7 @@ var schemaObj = {
                 "type": "integer",
                 "maximum": 1440,
                 "minimum": 1
-            } 
+            }
         }
     },
     server_available: {
@@ -205,11 +205,15 @@ function checkErrorMsg(validateStatus) {
 /**
  * Reset API
  */
-app.post('/reset',function(req,res){//Idk if this is the right way to do it.
+
+app.post('/reset', function (req, res) {//Idk if this is the right way to do it.
     database.resetTables()
-    .then((results)=>console.log(results))
-    .catch((err)=>console.log(err))
+        .then((results) => console.log(results))
+        .catch((err) => console.log(err)) 
 })
+
+
+
 /* 
 app.post('/reset', function (req, res) {
     database.resetTables(function (err, result) {
@@ -284,19 +288,19 @@ app.post('/company/queue', function (req, res) {
 app.put('/company/queue', function (req, res) {
     const queue_id = req.query.queue_id;
     const status = req.body.status;
-    
+
     let schema = schemaObj.update_queue;
     let errorStatusMsg;
     let validateStatus = validate(req.query, schema);
-    
-    
+
+
     if (status != "ACTIVATE" && status != "DEACTIVATE") {
 
         res.status(400).send({
             error: "Status must be either 'ACTIVATE' or 'DEACTIVATE'",
             code: "INVALID_QUERY_STRING"
         })
-    }else if (validateStatus.errors.length != 0) {
+    } else if (validateStatus.errors.length != 0) {
         errorStatusMsg = checkErrorMsg(validateStatus);
 
         res.status(400).send({
