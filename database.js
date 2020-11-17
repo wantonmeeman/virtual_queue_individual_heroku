@@ -18,7 +18,7 @@ function serverAvailable(q_id, cb) {
         }
 
         // Find out if Queue exists -> Find out if Queue is empty -> Update Customer in Queue
-        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1)', [q_id], function (err, result) {//0
+        client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {//0
             if (err) {
                 console.log(err)
                 return cb(err.stack, null)
@@ -27,7 +27,7 @@ function serverAvailable(q_id, cb) {
                 console.log("Q doesnt exist")
                 return cb("404", null)
             } else {
-                client.query('SELECT customer_id FROM customers WHERE served = false AND queue_id = UPPER($1) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
+                client.query('SELECT customer_id FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
                     if (err1) {
                         console.log(err1)
                         return cb(err1.stack, null)
