@@ -282,8 +282,8 @@ function createQueue(c_id, q_id, callback) {
                 })
 
             }
-            client.release();
         })
+        client.release();
     })
 
 }
@@ -329,7 +329,7 @@ function resetTables() {
         }
 
         client //Promise Method
-        .query('TRUNCATE TABLE customers; TRUNCATE TABLE queue;')
+        .query('TRUNCATE TABLE customers, queue;')
         .then(result => console.log(result.rows))
         .catch(e => console.error(e.stack))
 
