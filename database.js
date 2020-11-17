@@ -282,8 +282,8 @@ function createQueue(c_id, q_id, callback) {
                 })
 
             }
-            client.release();
         })
+        client.release();
     })
 
 }
@@ -322,6 +322,19 @@ function resetTables() {
     /**
      * return a promise that resolves when the database is successfully reset, and rejects if there was any error.
      */
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.log(err)
+            return callback(err, null)
+        }
+
+        client //Promise Method
+        .query('TRUNCATE TABLE customers, queue;')
+        .then(result => console.log(result.rows))
+        .catch(e => console.error(e.stack))
+
+        client.release();
+    })
 }
 
 function closeDatabaseConnections() {

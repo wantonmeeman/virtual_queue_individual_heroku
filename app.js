@@ -101,6 +101,7 @@ var schemaObj = {
 
 function checkErrorMsg(validateStatus) {
     var errorName = validateStatus.errors[0].name;
+
     switch (validateStatus.errors[0].property) {
         // COMPANY_ID
         case 'instance.company_id':
@@ -120,7 +121,7 @@ function checkErrorMsg(validateStatus) {
             break;
 
         case 'instance.customer_id':
-            if (errorNamee == 'minimum') {
+            if (errorName == 'minimum') {
                 errorStatusMsg = "customer_id is below 10 digits!"
 
             } else if (errorName == 'maximum') {
@@ -140,7 +141,7 @@ function checkErrorMsg(validateStatus) {
             } else if (errorName == 'minLength') {
                 errorStatusMsg = "queue_id is too short!"
 
-            } else if (errorName == 'maxLength') {
+            } else if (gi == 'maxLength') {
                 errorStatusMsg = "queue_id is too long!"
 
             } else if (errorName == 'pattern') {
@@ -209,6 +210,23 @@ function checkErrorMsg(validateStatus) {
 //     .then((results)=>console.log(results))
 //     .catch((err)=>console.log(err))
 // })
+/* 
+app.post('/reset', function (req, res) {
+    database.resetTables(function (err, result) {
+        if (!err) {
+            res.sendStatus(200);
+        } else {
+            res.status(500).send({
+                error: "Unable to establish connection with database",
+                code: "UNEXPECTED_ERROR"
+            })
+        }
+
+    })
+
+}) */
+
+
 
 /**
  * ========================== COMPANY =========================
