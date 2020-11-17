@@ -111,7 +111,7 @@ function arrivalRate(q_id, from, duration, cb) {
             }
         })
         client.release();
-        
+
     })
 }
 
@@ -323,6 +323,19 @@ function resetTables() {
     /**
      * return a promise that resolves when the database is successfully reset, and rejects if there was any error.
      */
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.log(err)
+            return callback(err, null)
+        }
+
+        client //Promise Method
+        .query('TRUNCATE TABLE customers; TRUNCATE TABLE queue;')
+        .then(result => console.log(result.rows))
+        .catch(e => console.error(e.stack))
+
+        client.release();
+    })
 }
 
 function closeDatabaseConnections() {
@@ -330,8 +343,8 @@ function closeDatabaseConnections() {
      * return a promise that resolves when all connection to the database is successfully closed, and rejects if there was any error.
      */
     pool.end()
-    .then(() => console.log('ENDED'))
-    .catch((err) => console.log(err))
+        .then(() => console.log('ENDED'))
+        .catch((err) => console.log(err))
 
 }
 

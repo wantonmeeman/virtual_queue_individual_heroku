@@ -213,6 +213,23 @@ function checkErrorMsg(validateStatus) {
 //     .catch((err)=>console.log(err))
 // })
 
+app.post('/reset', function (req, res) {
+    database.resetTables(function (err, result) {
+        if (!err) {
+            res.sendStatus(200);
+        } else {
+            res.status(500).send({
+                error: "Unable to establish connection with database",
+                code: "UNEXPECTED_ERROR"
+            })
+        }
+
+    })
+
+})
+
+
+
 /**
  * ========================== COMPANY =========================
  */
@@ -463,7 +480,7 @@ app.post('/customer/queue', function (req, res) {
 app.get('/customer/queue', function (req, res) {
     const customer_id = req.query.customer_id;
     const queue_id = req.query.queue_id;
-    
+
     let query = req.query
     query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
 
