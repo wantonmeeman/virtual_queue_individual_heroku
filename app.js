@@ -77,7 +77,7 @@ var schemaObj = {
                 "pattern": "^[\d{10}]"
             },
             "queue_id": {
-                "type": "String",
+                "type": "string",
                 "minLength": 10,
                 "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
@@ -90,7 +90,7 @@ var schemaObj = {
         "required": ["queue_id"],
         "properties": {
             "queue_id": {
-                "type": "String",
+                "type": "string",
                 "minLength": 10,
                 "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
