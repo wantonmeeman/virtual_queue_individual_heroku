@@ -102,6 +102,7 @@ var schemaObj = {
 function checkErrorMsg(validateStatus) {
     var errorName = validateStatus.errors[0].name;
     var errorArgument = validateStatus.errors[0].argument;
+    
     switch (validateStatus.errors[0].property) {
         // COMPANY_ID
         case 'instance.company_id':
@@ -149,7 +150,7 @@ function checkErrorMsg(validateStatus) {
 
             } else if (errorName == 'required') {
                 errorStatusMsg = "queue_id is not in the body!"
-                
+
             }
             break;
 
@@ -177,21 +178,22 @@ function checkErrorMsg(validateStatus) {
 
             }
             break;
-        //IF a param/body key is not added
-        //Testing has not been done for customerid/company id
+
+        // IF a param/body key is not added
+        // Testing has not been done for customer_id/company_id
         case 'instance':
             if (errorArgument == 'queue_id') {
                 errorStatusMsg = "queue_id is not present!"
-            }else if(errorArgument == 'customer_id') {
+            } else if (errorArgument == 'customer_id') {
                 errorStatusMsg = "customer_id is not present!"
-            }else if(errorArgument == 'company_id') {
+            } else if (errorArgument == 'company_id') {
                 errorStatusMsg = "company_id is not present!"
-            }else if(errorArgument == 'from') {
+            } else if (errorArgument == 'from') {
                 errorStatusMsg = "from is not present!"
-            }else if(errorArgument == 'duration') {
+            } else if (errorArgument == 'duration') {
                 errorStatusMsg = "duration is not present!"
             }
-        break;
+            break;
     }
     return errorStatusMsg;
 }
@@ -355,7 +357,7 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
             error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
         })
-        
+
     } else {
         database.serverAvailable(queue_id, function (err, result) {
             if (err == '404') { // If Queue does not exist
