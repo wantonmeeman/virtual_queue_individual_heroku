@@ -72,7 +72,7 @@ function arrivalRate(q_id, from, duration, cb) {
                 return cb("404", null)
             } else {
                 // We don't need the above SQL statement's result
-                client.query(`SELECT generate_series($1::bigint,$2::bigint) as timestamp `, [from+1, endDate], function (err, result) {
+                client.query(`SELECT generate_series($1::bigint,$2::bigint) as timestamp `, [from + 1, endDate], function (err, result) {
                     if (err) {
                         console.log(err)
                         return cb(err, null)
@@ -83,7 +83,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                 return cb(err1, null)
                             } else {
                                 console.log("Starting Date: " + from)
-                                console.log("EndDate: " + endDate)  
+                                console.log("EndDate: " + endDate)
                                 console.log("Length of Array: " + result.rows.length)
                                 for (var i = 0; result.rows.length > i; i++) {
                                     if (result1.rows.length != 0) {
@@ -98,7 +98,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                         result.rows[i].count = 0;
                                     }
                                 }
-                                
+
                                 return cb(null, result.rows)
                             }
                         })
@@ -248,7 +248,7 @@ function createQueue(c_id, q_id, callback) {
             console.log(err)
             return callback(err, null)
         }
-        client.query('SELECT queue_id from queue WHERE queue_id = $1', [q_id], function (error, result) {
+        client.query('SELECT queue_id from queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (error, result) {
             if (error) {
                 callback(err, null)
                 return;
@@ -257,7 +257,7 @@ function createQueue(c_id, q_id, callback) {
                 callback("422", null)
                 return
             } else {
-                client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "DEACTIVATE"], function (err1, res1) {
+                client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "INACTIVE"], function (err1, res1) {
                     if (err1) {
                         console.log(err1);
                         callback("500", null)
@@ -279,17 +279,22 @@ function createQueue(c_id, q_id, callback) {
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
     console.log(q_id, status);
+    if(status == 'ACTIVATE') {
+        status = 'ACTIVE'
+    }else if(status == 'DEACTIVATE') {
+        status = 'INACTIVE'
+    }
     pool.connect((err, client, release) => {
         if (err) {
             console.log(err)
             return callback(err, null)
         }
 
-        client.query("SELECT queue_id FROM queue WHERE queue_id = $1", [q_id], function (err1, res1) {
+        client.query("SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)", [q_id], function (err1, res1) {
             console.log(res1.rows.length)
             if (res1.rows.length == 0) {
                 return callback("404", null)
-            }else if (err1) {
+            } else if (err1) {
                 return callback(err1, null)
             } else {
                 client.query("UPDATE queue SET status = $1 WHERE queue_id = $2", [status, q_id], function (err2, res2) {
@@ -312,15 +317,15 @@ function resetTables(callback) {
             console.log(err)
             return callback(err, null)
         }
-        client.query('TRUNCATE TABLE customers, queue;',function(err,result){
-            if(err){
-                callback(err,null)
-            }else{
-                callback(null,result)
+        client.query('TRUNCATE TABLE customers, queue;', function (err, result) {
+            if (err) {
+                callback(err, null)
+            } else {
+                callback(null, result)
             }
         })
+        client.release();
 
-        
     })
 }
 
@@ -338,6 +343,6 @@ module.exports = {
     checkQueue,
     createQueue,
     updateQueue,
-     resetTables,
+    resetTables,
     closeDatabaseConnections,
 };

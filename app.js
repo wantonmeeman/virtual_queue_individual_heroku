@@ -31,7 +31,7 @@ var schemaObj = {
                 "type": "integer",
                 "maximum": 1440,
                 "minimum": 1
-            } 
+            }
         }
     },
     server_available: {
@@ -218,15 +218,15 @@ function checkErrorMsg(validateStatus) {
 /**
  * Reset API
  */
-app.post('/reset',function(req,res){//Idk if this is the right way to do it.
-    database.resetTables(function(err,result){
-        if(err){
+app.post('/reset', function (req, res) {//Idk if this is the right way to do it.
+    database.resetTables(function (err, result) {
+        if (err) {
             res.status(500).send({
                 "error": "Unable to establish connection with database",
                 "code": "UNEXPECTED_ERROR"
             })
         }
-        else{
+        else {
             res.status(200).end()
         }
     })
@@ -290,19 +290,19 @@ app.post('/company/queue', function (req, res) {
 app.put('/company/queue', function (req, res) {
     const queue_id = req.query.queue_id;
     const status = req.body.status;
-    
+
     let schema = schemaObj.update_queue;
     let errorStatusMsg;
     let validateStatus = validate(req.query, schema);
-    
-    
+
+
     if (status != "ACTIVATE" && status != "DEACTIVATE") {
 
         res.status(400).send({
             error: "Status must be either 'ACTIVATE' or 'DEACTIVATE'",
-            code: "INVALID_QUERY_STRING"
+            code: "INVALID_JSON_BODY"
         })
-    }else if (validateStatus.errors.length != 0) {
+    } else if (validateStatus.errors.length != 0) {
         errorStatusMsg = checkErrorMsg(validateStatus);
 
         res.status(400).send({
@@ -393,11 +393,9 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
  * Company: Arrival Rate
  */
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
-
-    req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
-
+    const from = Date.parse(req.query.from) / 1000;
     const queue_id = req.query.queue_id;
-    const duration = req.query.duration;
+    const duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
 
     let schema = schemaObj.arrival_rate
     let errorStatusMsg;
@@ -414,7 +412,7 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
         })
 
     } else {
-        const from = Date.parse(req.query.from) / 1000;
+
         database.arrivalRate(queue_id, from, duration, function (err, result) {
             if (err == '404') { // If Q doesnt exist
                 res.status(404).send({
@@ -533,7 +531,7 @@ app.get('/customer/queue', function (req, res) {
 app.use(function (req, res, next) { //404
     res.status(404).json(
         {
-            error: "Path not found", 
+            error: "Path not found",
             code: "UNKNOWN_PATH"
         }
     )
@@ -542,7 +540,7 @@ app.use(function (req, res, next) { //404
 /**
  * Error Handler
  */
-app.use(function (err, req, res, next) { 
+app.use(function (err, req, res, next) {
     res.status(500).json(
         {
             error: "Unable to establish connection with database",
