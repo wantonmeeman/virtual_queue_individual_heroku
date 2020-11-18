@@ -291,7 +291,7 @@ function updateQueue(q_id, status, callback) {
             return callback(err, null)
         }
 
-        client.query("SELECT queue_id FROM queue WHERE queue_id = $1", [q_id], function (err1, res1) {
+        client.query("SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)", [q_id], function (err1, res1) {
             console.log(res1.rows.length)
             if (res1.rows.length == 0) {
                 return callback("404", null)
@@ -325,7 +325,7 @@ function resetTables(callback) {
                 callback(null, result)
             }
         })
-
+        client.release();
 
     })
 }

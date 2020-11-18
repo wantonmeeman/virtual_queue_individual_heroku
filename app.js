@@ -287,7 +287,7 @@ app.put('/company/queue', function (req, res) {
 
         res.status(400).send({
             error: "Status must be either 'ACTIVATE' or 'DEACTIVATE'",
-            code: "INVALID_QUERY_STRING"
+            code: "INVALID_JSON_BODY"
         })
     } else if (validateStatus.errors.length != 0) {
         errorStatusMsg = checkErrorMsg(validateStatus);
