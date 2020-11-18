@@ -73,21 +73,19 @@ function arrivalRate(q_id, from, duration, cb) {
                 return cb("404", null)
             } else {
                 // We don't need the above SQL statement's result
-                // Create Timestamp using the query, we can also use for loop
-                client.query(`select generate_series($1::bigint,$2::bigint) as timestamp `, [from, endDate], function (err, result) {
+                client.query(`SELECT generate_series($1::bigint,$2::bigint) as timestamp `, [from + 1, endDate], function (err, result) {
                     if (err) {
                         console.log(err)
                         return cb(err, null)
-                    } else {
-                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE (time_created BETWEEN $1 AND $2) AND queue_id = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
+                    } else {// $1 > time_created >= $2
+                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 > time_created AND time_created >= $2 AND queue_id = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
                             if (err1) {
                                 console.log(err1)
                                 return cb(err1, null)
                             } else {
                                 console.log("Starting Date: " + from)
-                                console.log("EndDate: " + endDate)  
+                                console.log("EndDate: " + endDate)
                                 console.log("Length of Array: " + result.rows.length)
-                                console.log("Length of Array2: " + result1.rows.length)
                                 for (var i = 0; result.rows.length > i; i++) {
                                     if (result1.rows.length != 0) {
                                         for (var x = 0; result1.rows.length > x; x++) {
@@ -101,7 +99,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                         result.rows[i].count = 0;
                                     }
                                 }
-                                
+
                                 return cb(null, result.rows)
                             }
                         })
@@ -262,15 +260,6 @@ function createQueue(c_id, q_id, callback) {
             } else {
                 client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "DEACTIVATE"], function (err1, res1) {
                     if (err1) {
-                        // if (err1.code === 'ERR_DUP_ENTRY') {
-                        //     callback(
-                        //         {
-                        //             code: '422',
-                        //             message: 'Queue Id already exists',
-                        //             inner: err1
-                        //         }, null)
-                        //     return;
-                        // }
                         console.log(err1);
                         callback("500", null)
                         return;
@@ -301,7 +290,7 @@ function updateQueue(q_id, status, callback) {
             console.log(res1.rows.length)
             if (res1.rows.length == 0) {
                 return callback("404", null)
-            }else if (err1) {
+            } else if (err1) {
                 return callback(err1, null)
             } else {
                 client.query("UPDATE queue SET status = $1 WHERE queue_id = $2", [status, q_id], function (err2, res2) {
@@ -318,31 +307,26 @@ function updateQueue(q_id, status, callback) {
 }
 
 
-function resetTables() {
-    /**
-     * return a promise that resolves when the database is successfully reset, and rejects if there was any error.
-     */
+function resetTables(callback) {
     pool.connect((err, client, release) => {
         if (err) {
             console.log(err)
             return callback(err, null)
         }
+        client.query('TRUNCATE TABLE customers, queue;', function (err, result) {
+            if (err) {
+                callback(err, null)
+            } else {
+                callback(null, result)
+            }
+        })
 
-        return client // Promise Method
-        .query('TRUNCATE TABLE customers, queue;')
-        .then(result => console.log(result.rows))
-        .then(client.release())
-        .catch(e => console.error(e.stack))
 
-        
     })
 }
 
 function closeDatabaseConnections() {
-    /**
-     * return a promise that resolves when all connection to the database is successfully closed, and rejects if there was any error.
-     */
-    pool.end()
+    return pool.end()
         .then(() => console.log('ENDED'))
         .catch((err) => console.log(err))
 
@@ -355,6 +339,6 @@ module.exports = {
     checkQueue,
     createQueue,
     updateQueue,
-     resetTables,
+    resetTables,
     closeDatabaseConnections,
 };

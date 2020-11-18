@@ -205,31 +205,19 @@ function checkErrorMsg(validateStatus) {
 /**
  * Reset API
  */
-
 app.post('/reset', function (req, res) {//Idk if this is the right way to do it.
-    database.resetTables()
-        .then(res.status(200))
-        .catch((err) => console.log(err))
-
-})
-
-
-
-/* 
-app.post('/reset', function (req, res) {
     database.resetTables(function (err, result) {
-        if (!err) {
-            res.sendStatus(200);
-        } else {
+        if (err) {
             res.status(500).send({
-                error: "Unable to establish connection with database",
-                code: "UNEXPECTED_ERROR"
+                "error": "Unable to establish connection with database",
+                "code": "UNEXPECTED_ERROR"
             })
         }
-
+        else {
+            res.status(200).end()
+        }
     })
-
-}) */
+})
 
 
 
@@ -397,7 +385,6 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
 
     const queue_id = req.query.queue_id;
     const duration = req.query.duration;
-    //console.log(req.query.from)
 
     let schema = schemaObj.arrival_rate
     let errorStatusMsg;
@@ -413,12 +400,9 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
         })
 
     } else {
-        // Ask about + Value
-        // %2B
         const from = Date.parse(req.query.from) / 1000;
         database.arrivalRate(queue_id, from, duration, function (err, result) {
             if (err == '404') { // If Q doesnt exist
-                console.log(queue)
                 res.status(404).send({
                     error: "Queue Id " + queue_id + " Not Found",
                     code: "UNKNOWN_QUEUE"
@@ -534,11 +518,10 @@ app.get('/customer/queue', function (req, res) {
  * 404
  */
 app.use(function (req, res, next) { //404
-    console.log("UNKNOWN URL")
     res.status(404).json(
         {
-            error: "Queue ID " + /*QUEUE ID*/1 + " not found.", //What do i put here lmao
-            code: "UNKNOWN_QUEUE"
+            error: "Path not found",
+            code: "UNKNOWN_PATH"
         }
     )
 })
@@ -546,6 +529,15 @@ app.use(function (req, res, next) { //404
 /**
  * Error Handler
  */
+app.use(function (err, req, res, next) {
+    res.status(500).json(
+        {
+            error: "Unable to establish connection with database",
+            code: "UNEXPECTED_ERROR"
+        }
+    )
+})
+
 
 function tearDown() {
     // DO NOT DELETE
