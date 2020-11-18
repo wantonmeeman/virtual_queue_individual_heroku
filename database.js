@@ -249,7 +249,7 @@ function createQueue(c_id, q_id, callback) {
             console.log(err)
             return callback(err, null)
         }
-        client.query('SELECT queue_id from queue WHERE queue_id = $1', [q_id], function (error, result) {
+        client.query('SELECT queue_id from queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (error, result) {
             if (error) {
                 callback(err, null)
                 return;
