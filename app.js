@@ -72,8 +72,8 @@ var schemaObj = {
         "properties": {
             "company_id": {
                 "type": "integer",
-                "minLength": 1000000000,
-                "maxLength": 9999999999,
+                "minimum": 1000000000,
+                "maximum": 9999999999,
                 "pattern": "^[\d{10}]"
             },
             "queue_id": {
@@ -109,10 +109,10 @@ function checkErrorMsg(validateStatus) {
             if (errorName == 'type') {
                 errorStatusMsg = "company_id is not an integer!"
 
-            } else if (errorName == 'minLength') {
+            } else if (errorName == 'minimum') {
                 errorStatusMsg = "company_id is too short!"
 
-            } else if (errorName == 'maxLength') {
+            } else if (errorName == 'maximum') {
                 errorStatusMsg = "company_id is too long!"
 
             } else if (errorName == 'required') {
