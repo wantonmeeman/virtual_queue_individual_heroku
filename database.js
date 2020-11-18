@@ -258,7 +258,7 @@ function createQueue(c_id, q_id, callback) {
                 callback("422", null)
                 return
             } else {
-                client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "DEACTIVATE"], function (err1, res1) {
+                client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "INACTIVE"], function (err1, res1) {
                     if (err1) {
                         console.log(err1);
                         callback("500", null)

@@ -380,11 +380,9 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
  * Company: Arrival Rate
  */
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
-
-    req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
-
+    const from = Date.parse(req.query.from) / 1000;
     const queue_id = req.query.queue_id;
-    const duration = req.query.duration;
+    const duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
 
     let schema = schemaObj.arrival_rate
     let errorStatusMsg;
@@ -400,7 +398,7 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
         })
 
     } else {
-        const from = Date.parse(req.query.from) / 1000;
+
         database.arrivalRate(queue_id, from, duration, function (err, result) {
             if (err == '404') { // If Q doesnt exist
                 res.status(404).send({
