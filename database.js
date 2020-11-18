@@ -280,6 +280,11 @@ function createQueue(c_id, q_id, callback) {
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
     console.log(q_id, status);
+    if(status == 'ACTIVATE') {
+        status = 'ACTIVE'
+    }else if(status == 'DEACTIVATE') {
+        status = 'INACTIVE'
+    }
     pool.connect((err, client, release) => {
         if (err) {
             console.log(err)
