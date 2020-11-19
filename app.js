@@ -72,12 +72,12 @@ var schemaObj = {
         "properties": {
             "company_id": {
                 "type": "integer",
-                "minLength": 1000000000,
-                "maxLength": 9999999999,
+                "minimum": 1000000000,
+                "maximum": 9999999999,
                 "pattern": "^[\d{10}]"
             },
             "queue_id": {
-                "type": "String",
+                "type": "string",
                 "minLength": 10,
                 "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
@@ -90,7 +90,7 @@ var schemaObj = {
         "required": ["queue_id"],
         "properties": {
             "queue_id": {
-                "type": "String",
+                "type": "string",
                 "minLength": 10,
                 "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
@@ -102,16 +102,17 @@ var schemaObj = {
 function checkErrorMsg(validateStatus) {
     var errorName = validateStatus.errors[0].name;
     var errorArgument = validateStatus.errors[0].argument;
+    
     switch (validateStatus.errors[0].property) {
         // COMPANY_ID
         case 'instance.company_id':
             if (errorName == 'type') {
                 errorStatusMsg = "company_id is not an integer!"
 
-            } else if (errorName == 'minLength') {
+            } else if (errorName == 'minimum') {
                 errorStatusMsg = "company_id is too short!"
 
-            } else if (errorName == 'maxLength') {
+            } else if (errorName == 'maximum') {
                 errorStatusMsg = "company_id is too long!"
 
             } else if (errorName == 'required') {
@@ -149,7 +150,7 @@ function checkErrorMsg(validateStatus) {
 
             } else if (errorName == 'required') {
                 errorStatusMsg = "queue_id is not in the body!"
-                
+
             }
             break;
 
@@ -177,9 +178,11 @@ function checkErrorMsg(validateStatus) {
 
             }
             break;
-        //IF a param/body key is not added
-        //Testing has not been done for customerid/company id
+
+        // IF a param/body key is not added
+        // Testing has not been done for customer_id/company_id
         case 'instance':
+<<<<<<< HEAD
             // if (errorArgument == 'queue_id') {
             //     errorStatusMsg = "queue_id is not present!"
             // }else if(errorArgument == 'customer_id') {
@@ -193,6 +196,20 @@ function checkErrorMsg(validateStatus) {
             // }
             errorStatusMsg = errorArgument + " is not present"
         break;
+=======
+            if (errorArgument == 'queue_id') {
+                errorStatusMsg = "queue_id is not present!"
+            } else if (errorArgument == 'customer_id') {
+                errorStatusMsg = "customer_id is not present!"
+            } else if (errorArgument == 'company_id') {
+                errorStatusMsg = "company_id is not present!"
+            } else if (errorArgument == 'from') {
+                errorStatusMsg = "from is not present!"
+            } else if (errorArgument == 'duration') {
+                errorStatusMsg = "duration is not present!"
+            }
+            break;
+>>>>>>> aa1a82f5e3cd72471670f15e8d60964a4fe3bbee
     }
     return errorStatusMsg;
 }
@@ -356,7 +373,7 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
             error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
         })
-        
+
     } else {
         database.serverAvailable(queue_id, function (err, result) {
             if (err == '404') { // If Queue does not exist

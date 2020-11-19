@@ -206,17 +206,19 @@ function checkQueue(c_id, q_id, cb) {
                                 console.log(err)
                                 return cb(err, null)
                             }
+                            console.log("count 1: " + result.rows[0].count);
 
-                            if (result.rows[0].count == 0) {
+                            if (parseInt(result.rows[0].count) === 0) {
                                 // (if count is 0, customer )  
                                 // number of customers that are not served (positive value)
                                 // select no. of customers that are served and row no < given row c_id (count no. of people that join before and are served)
-                                client.query('SELECT COUNT(customer_id) FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) AND row_no < (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3)) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($4) AND served = true ORDER BY row_no DESC LIMIT 1), 0));', [q_id, c_id, q_id, q_id], function (err, result) {
+                                client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) AND row_no < (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3)) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($4) AND served = true ORDER BY row_no DESC LIMIT 1), 0));', [q_id, c_id, q_id, q_id], function (err, result) {
                                     if (err) {
                                         console.log(err)
                                         return cb(err, null)
                                     }
-
+                                    console.log("count 2: " + result.rows[0].count);
+                                    console.log("hello2");
                                     return cb(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
                                 })
 
@@ -224,6 +226,7 @@ function checkQueue(c_id, q_id, cb) {
                                 // return cb(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
 
                                 let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE
+                                console.log("hello1");
                                 return cb(null, { "total": total, "ahead": -1, "status": status })
                             }
                         })
@@ -242,12 +245,12 @@ function checkQueue(c_id, q_id, cb) {
 
 // ****** CREATE QUEUE ******
 function createQueue(c_id, q_id, callback) {
-    console.log(c_id, q_id);
     pool.connect((err, client, release) => {
         if (err) {
             console.log(err)
             return callback(err, null)
         }
+        //CHECK IF QUEUE_ID ALREADY EXISTS
         client.query('SELECT queue_id from queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (error, result) {
             if (error) {
                 callback(err, null)
@@ -257,6 +260,7 @@ function createQueue(c_id, q_id, callback) {
                 callback("422", null)
                 return
             } else {
+                //INSERT QUEUE INTO DATABASE
                 client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "INACTIVE"], function (err1, res1) {
                     if (err1) {
                         console.log(err1);
@@ -278,10 +282,10 @@ function createQueue(c_id, q_id, callback) {
 
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
-    console.log(q_id, status);
-    if(status == 'ACTIVATE') {
+    //CONVERT USER INPUT TO DATA TO BE STORED IN DATABASE
+    if (status == 'ACTIVATE') {
         status = 'ACTIVE'
-    }else if(status == 'DEACTIVATE') {
+    } else if (status == 'DEACTIVATE') {
         status = 'INACTIVE'
     }
     pool.connect((err, client, release) => {
@@ -289,7 +293,7 @@ function updateQueue(q_id, status, callback) {
             console.log(err)
             return callback(err, null)
         }
-
+        //CHECK IF QUEUE EXISTS
         client.query("SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)", [q_id], function (err1, res1) {
             console.log(res1.rows.length)
             if (res1.rows.length == 0) {
