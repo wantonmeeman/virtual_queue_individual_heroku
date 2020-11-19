@@ -187,6 +187,7 @@ function checkQueue(c_id, q_id, cb) {
                 }, null)
 
             } else {
+                let queueStatus = result.rows[0].status;
                 // total no. of ppl that is still in queue (excluding those have missed the queue/already served)
                 // COALESCE (return first non null value, if there are no served customers in queue (null), set it to 0)
                 client.query(`SELECT COUNT(customer_id) "count" FROM customers WHERE UPPER(queue_id) = UPPER($1) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($2) AND served = true ORDER BY row_no DESC LIMIT 1), 0));`, [q_id, q_id], function (err, result) {
@@ -198,42 +199,59 @@ function checkQueue(c_id, q_id, cb) {
                     }
 
                     if (c_id != null) {
-                        // (if customer_id is provided then run)
-                        // number of customers that are served (negative value) -> MISSED
-                        // select no. of customers that are served and row no > given row c_id (check if there are people that join later but already served)
-                        client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = true AND UPPER(queue_id) = UPPER($1) AND row_no > (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3));', [q_id, c_id, q_id], function (err, result) {
+                        client.query('SELECT * FROM customers WHERE customer_id = $1', [c_id], function (err, result) {
                             if (err) {
                                 console.log(err)
                                 return cb(err, null)
                             }
-                            console.log("count 1: " + result.rows[0].count);
 
-                            if (parseInt(result.rows[0].count) === 0) {
-                                // (if count is 0, customer )  
-                                // number of customers that are not served (positive value)
-                                // select no. of customers that are served and row no < given row c_id (count no. of people that join before and are served)
-                                client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) AND row_no < (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3)) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($4) AND served = true ORDER BY row_no DESC LIMIT 1), 0));', [q_id, c_id, q_id, q_id], function (err, result) {
+                            if (result.rows.length == 0) {
+                                return cb(null, { "total": total, "ahead": -1, "status": queueStatus })
+                            } else {
+
+
+                                // (if customer_id is provided then run)
+                                // number of customers that are served (negative value) -> MISSED
+                                // select no. of customers that are served and row no > given row c_id (check if there are people that join later but already served)
+                                client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = true AND UPPER(queue_id) = UPPER($1) AND row_no > (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3));', [q_id, c_id, q_id], function (err, result) {
                                     if (err) {
                                         console.log(err)
                                         return cb(err, null)
                                     }
-                                    console.log("count 2: " + result.rows[0].count);
-                                    console.log("hello2");
-                                    return cb(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
+                                    console.log("count 1: " + result.rows[0].count);
+
+                                    if (parseInt(result.rows[0].count) === 0) {
+                                        // (if count is 0, customer )  
+                                        // number of customers that are not served (positive value)
+                                        // select no. of customers that are served and row no < given row c_id (count no. of people that join before and are served)
+                                        client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) AND row_no < (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3)) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($4) AND served = true ORDER BY row_no DESC LIMIT 1), 0));', [q_id, c_id, q_id, q_id], function (err, result) {
+                                            if (err) {
+                                                console.log(err)
+                                                return cb(err, null)
+                                            }
+                                            console.log("count 2: " + result.rows[0].count);
+                                            console.log("hello2");
+                                            return cb(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
+                                        })
+
+                                    } else {
+                                        // return cb(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
+
+                                        let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE
+                                        console.log("hello1");
+                                        return cb(null, { "total": total, "ahead": -1, "status": status })
+                                    }
                                 })
-
-                            } else {
-                                // return cb(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
-
-                                let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE
-                                console.log("hello1");
-                                return cb(null, { "total": total, "ahead": -1, "status": status })
                             }
                         })
+                        
                     } else {
                         return cb(null, { "total": total, "status": "ACTIVE" })
                     }
+
+
                 })
+
             }
         })
         client.release();
