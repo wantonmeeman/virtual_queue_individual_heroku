@@ -180,17 +180,18 @@ function checkErrorMsg(validateStatus) {
         //IF a param/body key is not added
         //Testing has not been done for customerid/company id
         case 'instance':
-            if (errorArgument == 'queue_id') {
-                errorStatusMsg = "queue_id is not present!"
-            }else if(errorArgument == 'customer_id') {
-                errorStatusMsg = "customer_id is not present!"
-            }else if(errorArgument == 'company_id') {
-                errorStatusMsg = "company_id is not present!"
-            }else if(errorArgument == 'from') {
-                errorStatusMsg = "from is not present!"
-            }else if(errorArgument == 'duration') {
-                errorStatusMsg = "duration is not present!"
-            }
+            // if (errorArgument == 'queue_id') {
+            //     errorStatusMsg = "queue_id is not present!"
+            // }else if(errorArgument == 'customer_id') {
+            //     errorStatusMsg = "customer_id is not present!"
+            // }else if(errorArgument == 'company_id') {
+            //     errorStatusMsg = "company_id is not present!"
+            // }else if(errorArgument == 'from') {
+            //     errorStatusMsg = "from is not present!"
+            // }else if(errorArgument == 'duration') {
+            //     errorStatusMsg = "duration is not present!"
+            // }
+            errorStatusMsg = errorArgument + " is not present"
         break;
     }
     return errorStatusMsg;
@@ -395,17 +396,21 @@ app.put('/company/server', function (req, res) { // Add JSON Schema Validation
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
     const from = Date.parse(req.query.from) / 1000;
     const queue_id = req.query.queue_id;
-    const duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
-
+    const duration = req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
+    
     let schema = schemaObj.arrival_rate
     let errorStatusMsg;
+    if(duration == NaN){
+        res.status(400).send({
+            error: errorStatusMsg,
+            code: "INVALID_QUERY_STRING"
+        })
+    }
     let validateStatus = validate(req.query, schema);
 
     if (validateStatus.errors.length != 0) {//JSON Validation Handling
-        console.log("Runs")
         errorStatusMsg = checkErrorMsg(validateStatus);
-        console.log(validateStatus.errors)
-
+        console.log(errorStatusMsg)
         res.status(400).send({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
