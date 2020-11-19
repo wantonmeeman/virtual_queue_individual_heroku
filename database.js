@@ -62,7 +62,7 @@ function arrivalRate(q_id, from, duration, cb) {
             return cb('Error acquiring client', null)
         }
 
-        client.query('SELECT queue_id FROM customers WHERE queue_id = UPPER($1)', [q_id], function (err, result) {//change to from queue when fk is added
+        client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {//change to from queue when fk is added
             if (err) {
                 console.log(err)
                 return cb(err, null)
@@ -77,7 +77,7 @@ function arrivalRate(q_id, from, duration, cb) {
                         console.log(err)
                         return cb(err, null)
                     } else {// $1 > time_created >= $2
-                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 > time_created AND time_created >= $2 AND queue_id = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
+                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 < time_created AND time_created <= $2 AND queue_id = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
                             if (err1) {
                                 console.log(err1)
                                 return cb(err1, null)
@@ -90,6 +90,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                         for (var x = 0; result1.rows.length > x; x++) {
                                             if (result.rows[i].timestamp == result1.rows[x].time_created) {
                                                 result.rows[i].count = result1.rows[x].count;
+                                                console.log(i)
                                             } else {
                                                 result.rows[i].count = 0;
                                             }

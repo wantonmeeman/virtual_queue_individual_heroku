@@ -47,9 +47,27 @@ var schemaObj = {
         }
     },
 
-    join_check_queue: {
+    join_queue: {
         "type": "object",
         "required": ["customer_id", "queue_id"],
+        "properties": {
+            "customer_id": {
+                "type": "integer",
+                "minimum": 1000000000,
+                "maximum": 9999999999,
+                "pattern": "^[\d{10}]"
+            },
+            "queue_id": {
+                "type": "string",
+                "pattern": '^[a-zA-Z0-9]*$',
+                "minLength": 10,
+                "maxLength": 10
+            }
+        }
+    },
+    check_queue: {
+        "type": "object",
+        "required": ["queue_id"],
         "properties": {
             "customer_id": {
                 "type": "integer",
@@ -182,7 +200,6 @@ function checkErrorMsg(validateStatus) {
         // IF a param/body key is not added
         // Testing has not been done for customer_id/company_id
         case 'instance':
-<<<<<<< HEAD
             // if (errorArgument == 'queue_id') {
             //     errorStatusMsg = "queue_id is not present!"
             // }else if(errorArgument == 'customer_id') {
@@ -196,20 +213,6 @@ function checkErrorMsg(validateStatus) {
             // }
             errorStatusMsg = errorArgument + " is not present"
         break;
-=======
-            if (errorArgument == 'queue_id') {
-                errorStatusMsg = "queue_id is not present!"
-            } else if (errorArgument == 'customer_id') {
-                errorStatusMsg = "customer_id is not present!"
-            } else if (errorArgument == 'company_id') {
-                errorStatusMsg = "company_id is not present!"
-            } else if (errorArgument == 'from') {
-                errorStatusMsg = "from is not present!"
-            } else if (errorArgument == 'duration') {
-                errorStatusMsg = "duration is not present!"
-            }
-            break;
->>>>>>> aa1a82f5e3cd72471670f15e8d60964a4fe3bbee
     }
     return errorStatusMsg;
 }
@@ -469,7 +472,7 @@ app.post('/customer/queue', function (req, res) {
     const customer_id = req.body.customer_id;
     const queue_id = req.body.queue_id;
 
-    let schema = schemaObj.join_check_queue;
+    let schema = schemaObj.join_queue;
     let errorStatusMsg;
     let validateStatus = validate(req.body, schema)
 
@@ -511,9 +514,10 @@ app.get('/customer/queue', function (req, res) {
     const queue_id = req.query.queue_id;
 
     let query = req.query
-    query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
-
-    let schema = schemaObj.join_check_queue;
+    if(query["customer_id"] != undefined){
+        query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
+    }
+    let schema = schemaObj.check_queue;
     let errorStatusMsg;
     let validateStatus = validate(query, schema)
 
