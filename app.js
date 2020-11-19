@@ -47,27 +47,9 @@ var schemaObj = {
         }
     },
 
-    join_queue: {
+    join_check_queue: {
         "type": "object",
         "required": ["customer_id", "queue_id"],
-        "properties": {
-            "customer_id": {
-                "type": "integer",
-                "minimum": 1000000000,
-                "maximum": 9999999999,
-                "pattern": "^[\d{10}]"
-            },
-            "queue_id": {
-                "type": "string",
-                "pattern": '^[a-zA-Z0-9]*$',
-                "minLength": 10,
-                "maxLength": 10
-            }
-        }
-    },
-    check_queue: {
-        "type": "object",
-        "required": ["queue_id"],
         "properties": {
             "customer_id": {
                 "type": "integer",
@@ -472,7 +454,7 @@ app.post('/customer/queue', function (req, res) {
     const customer_id = req.body.customer_id;
     const queue_id = req.body.queue_id;
 
-    let schema = schemaObj.join_queue;
+    let schema = schemaObj.join_check_queue;
     let errorStatusMsg;
     let validateStatus = validate(req.body, schema)
 
@@ -514,10 +496,9 @@ app.get('/customer/queue', function (req, res) {
     const queue_id = req.query.queue_id;
 
     let query = req.query
-    if(query["customer_id"] != undefined){
-        query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
-    }
-    let schema = schemaObj.check_queue;
+    query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
+
+    let schema = schemaObj.join_check_queue;
     let errorStatusMsg;
     let validateStatus = validate(query, schema)
 
