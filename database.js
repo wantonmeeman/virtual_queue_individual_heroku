@@ -245,12 +245,12 @@ function checkQueue(c_id, q_id, cb) {
 
 // ****** CREATE QUEUE ******
 function createQueue(c_id, q_id, callback) {
-    console.log(c_id, q_id);
     pool.connect((err, client, release) => {
         if (err) {
             console.log(err)
             return callback(err, null)
         }
+        //CHECK IF QUEUE_ID ALREADY EXISTS
         client.query('SELECT queue_id from queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (error, result) {
             if (error) {
                 callback(err, null)
@@ -260,6 +260,7 @@ function createQueue(c_id, q_id, callback) {
                 callback("422", null)
                 return
             } else {
+                //INSERT QUEUE INTO DATABASE
                 client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "INACTIVE"], function (err1, res1) {
                     if (err1) {
                         console.log(err1);
@@ -281,7 +282,7 @@ function createQueue(c_id, q_id, callback) {
 
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
-    console.log(q_id, status);
+    //CONVERT USER INPUT TO DATA TO BE STORED IN DATABASE
     if (status == 'ACTIVATE') {
         status = 'ACTIVE'
     } else if (status == 'DEACTIVATE') {
@@ -292,7 +293,7 @@ function updateQueue(q_id, status, callback) {
             console.log(err)
             return callback(err, null)
         }
-
+        //CHECK IF QUEUE EXISTS
         client.query("SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)", [q_id], function (err1, res1) {
             console.log(res1.rows.length)
             if (res1.rows.length == 0) {
