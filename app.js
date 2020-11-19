@@ -182,7 +182,6 @@ function checkErrorMsg(validateStatus) {
         // IF a param/body key is not added
         // Testing has not been done for customer_id/company_id
         case 'instance':
-<<<<<<< HEAD
             // if (errorArgument == 'queue_id') {
             //     errorStatusMsg = "queue_id is not present!"
             // }else if(errorArgument == 'customer_id') {
@@ -196,20 +195,6 @@ function checkErrorMsg(validateStatus) {
             // }
             errorStatusMsg = errorArgument + " is not present"
         break;
-=======
-            if (errorArgument == 'queue_id') {
-                errorStatusMsg = "queue_id is not present!"
-            } else if (errorArgument == 'customer_id') {
-                errorStatusMsg = "customer_id is not present!"
-            } else if (errorArgument == 'company_id') {
-                errorStatusMsg = "company_id is not present!"
-            } else if (errorArgument == 'from') {
-                errorStatusMsg = "from is not present!"
-            } else if (errorArgument == 'duration') {
-                errorStatusMsg = "duration is not present!"
-            }
-            break;
->>>>>>> aa1a82f5e3cd72471670f15e8d60964a4fe3bbee
     }
     return errorStatusMsg;
 }
