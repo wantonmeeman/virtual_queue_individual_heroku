@@ -86,11 +86,11 @@ function arrivalRate(q_id, from, duration, cb) {
                                 console.log("EndDate: " + endDate)
                                 console.log("Length of Array: " + result.rows.length)
                                 for (var i = 0; result.rows.length > i; i++) {
-                                    if (result1.rows.length != 0) {//If result1 is empty, no body in the queue's time period
+                                    if (result1.rows.length != 0) {
                                         for (var x = 0; result1.rows.length > x; x++) {
-                                            if (result.rows[i].timestamp == result1.rows[x].time_created ) {
-                                                result.rows[i].count = Number(result1.rows[x].count);//Number() is to standardise, 0 would be a number while anything else would be a string
-                                                break;//Exits the Current For Loop
+                                            if (result.rows[i].timestamp == result1.rows[x].time_created) {
+                                                result.rows[i].count = result1.rows[x].count;
+                                                console.log(i)
                                             } else {
                                                 result.rows[i].count = 0;
                                             }
@@ -99,7 +99,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                         result.rows[i].count = 0;
                                     }
                                 }
-                                //console.log(result.rows[1])
+
                                 return cb(null, result.rows)
                             }
                         })
