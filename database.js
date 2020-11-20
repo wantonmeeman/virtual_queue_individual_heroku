@@ -77,7 +77,7 @@ function arrivalRate(q_id, from, duration, cb) {
                         console.log(err)
                         return cb(err, null)
                     } else {
-                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 < time_created AND time_created <= $2 AND queue_id = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
+                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 < time_created AND time_created <= $2 AND UPPER(queue_id) = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
                             if (err1) {
                                 console.log(err1)
                                 return cb(err1, null)

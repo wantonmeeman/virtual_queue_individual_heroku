@@ -4,6 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
+        "heroku-prebuild": "npm install --only=dev",
         "test": "jest -i"
     },
     "author": "",
