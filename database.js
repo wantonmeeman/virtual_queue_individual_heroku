@@ -71,40 +71,35 @@ function arrivalRate(q_id, from, duration, cb) {
                 console.log("Q doesnt exist")
                 return cb("404", null)
             } else {
-                // We don't need the above SQL statement's result
-                client.query(`SELECT generate_series($1::bigint,$2::bigint) as timestamp `, [from + 1, endDate], function (err, result) {
+                //Populate the Array
+                var jsonArray = [];
+                for (let i = from + 1; i <= endDate; i++) {
+                    jsonArray.push({
+                        "timestamp": i,
+                        "count" : 0
+                    })
+                }
+                client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 < time_created AND time_created <= $2 AND UPPER(queue_id) = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err, result) {//1
                     if (err) {
                         console.log(err)
                         return cb(err, null)
                     } else {
-                        client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 < time_created AND time_created <= $2 AND UPPER(queue_id) = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err1, result1) {//1
-                            if (err1) {
-                                console.log(err1)
-                                return cb(err1, null)
-                            } else {
-                                console.log("Starting Date: " + from)
-                                console.log("EndDate: " + endDate)
-                                console.log("Length of Array: " + result.rows.length)
-                                for (var i = 0; result.rows.length > i; i++) {
-                                    if (result1.rows.length != 0) {
-                                        for (var x = 0; result1.rows.length > x; x++) {
-                                            if (result.rows[i].timestamp == result1.rows[x].time_created) {
-                                                result.rows[i].count = result1.rows[x].count;
-                                                console.log(i)
-                                            } else {
-                                                result.rows[i].count = 0;
-                                            }
-                                        }
-                                    } else {
-                                        result.rows[i].count = 0;
+                        console.log("Starting Date: " + from)
+                        console.log("EndDate: " + endDate)
+                        console.log(jsonArray.length)
+                        if (result.rows.length != 0) { //Check if there is nobody is in the array
+                            for (var i = 0; jsonArray.length > i; i++) {
+                                for (var x = 0; result.rows.length > x; x++) {
+                                    if (jsonArray[i].timestamp == result.rows[x].time_created) {
+                                        jsonArray[i].count = Number(result.rows[x].count);//It would return string otherwise
                                     }
                                 }
-
-                                return cb(null, result.rows)
                             }
-                        })
+                        }
+                        return cb(null, jsonArray)
                     }
                 })
+
 
             }
         })
@@ -245,7 +240,7 @@ function checkQueue(c_id, q_id, cb) {
                                 })
                             }
                         })
-                        
+
                     } else {
                         return cb(null, { "total": total, "status": "ACTIVE" })
                     }
