@@ -9,38 +9,38 @@ const pool = new Pool({
     port: 5432,
 })
 
-function serverAvailable(q_id, cb) {
+function serverAvailable(q_id, callback) {
     pool.connect((err, client, release) => { // 1 Pool = 1 Client
 
         if (err) { // Error Handling for Pool
             console.log(err)
-            return cb('Error acquiring client', null)
+            return callback('Error acquiring client', null)
         }
 
         // Find out if Queue exists -> Find out if Queue is empty -> Update Customer in Queue
         client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {//0
             if (err) {
                 console.log(err)
-                return cb(err.stack, null)
+                return callback(err.stack, null)
             }
             if (result.rows.length == 0) { // Queue does not exist
-                return cb("404", null)
+                return callback("404", null)
             } else {
                 client.query('SELECT customer_id FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
                     if (err1) {
                         console.log(err1)
-                        return cb(err1.stack, null)
+                        return callback(err1.stack, null)
                     }
                     if (result1.rows.length == 0) { // Queue is empty
                         console.log("Q is empty")
-                        return cb(null, result1)
+                        return callback(null, result1)
                     } else {
                         client.query('UPDATE customers SET served = true WHERE customer_id = $1', [result1.rows[0].customer_id], function (err2, result2) {//Set served to true,2
                             if (err2) {
                                 console.log(err2)
-                                return cb(err2.stack, null)
+                                return callback(err2.stack, null)
                             } else { // Success
-                                return cb(null, result1)
+                                return callback(null, result1)
                             }
                         })
                     }
@@ -53,23 +53,23 @@ function serverAvailable(q_id, cb) {
     })
 }
 
-function arrivalRate(q_id, from, duration, cb) {
+function arrivalRate(q_id, from, duration, callback) {
     //End Date to Unix
     var endDate = from + (duration * 60)
     pool.connect((err, client, release) => { // 1 Pool = 1 Client
 
         if (err) { // Error Handling for Pool
-            return cb('Error acquiring client', null)
+            return callback('Error acquiring client', null)
         }
 
         client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {//change to from queue when fk is added
             if (err) {
                 console.log(err)
-                return cb(err, null)
+                return callback(err, null)
             }
             if (result.rows.length == 0) { // Queue does not exist
                 console.log("Q doesnt exist")
-                return cb("404", null)
+                return callback("404", null)
             } else {
                 //Populate the Array
                 var jsonArray = [];
@@ -82,7 +82,7 @@ function arrivalRate(q_id, from, duration, cb) {
                 client.query(`SELECT COUNT(*),time_created FROM customers WHERE $1 < time_created AND time_created <= $2 AND UPPER(queue_id) = UPPER($3) GROUP BY time_created`, [from, endDate, q_id], function (err, result) {//1
                     if (err) {
                         console.log(err)
-                        return cb(err, null)
+                        return callback(err, null)
                     } else {
                         console.log("Starting Date: " + from)
                         console.log("EndDate: " + endDate)
@@ -96,7 +96,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                 }
                             }
                         }
-                        return cb(null, jsonArray)
+                        return callback(null, jsonArray)
                     }
                 })
 
@@ -109,7 +109,7 @@ function arrivalRate(q_id, from, duration, cb) {
 }
 
 // ****** JOIN QUEUE ******
-function joinQueue(c_id, q_id, cb) {
+function joinQueue(c_id, q_id, callback) {
 
     console.log(c_id)
     console.log(q_id)
@@ -123,29 +123,29 @@ function joinQueue(c_id, q_id, cb) {
         client.query(`SELECT * FROM queue WHERE queue_id = $1 AND status = 'INACTIVE'`, [q_id], function (err, result) {
             if (err) {
                 console.log(err)
-                return cb(err, null)
+                return callback(err, null)
             }
 
             if (result.rows.length == 1) {  // if result is not null, queue is inactive
-                return cb({ code: 'INACTIVE_QUEUE' }, null)
+                return callback({ code: 'INACTIVE_QUEUE' }, null)
             } else {
                 // check if this customer is already in this queue
                 client.query('SELECT * FROM customers WHERE customer_id = $1 AND queue_id = UPPER($2)', [c_id, q_id], function (err, result) {
                     if (err) {
                         console.log(err)
-                        return cb(err, null)
+                        return callback(err, null)
                     }
 
                     if (result.rows.length >= 1) {  // if there are results, customer_id is already in given queue (DUPLICATE)
-                        return cb({ code: 'ER_DUP_ENTRY' }, null)
+                        return callback({ code: 'ER_DUP_ENTRY' }, null)
                     } else {
                         // if no results, add customer into given queue
                         client.query('INSERT INTO customers (customer_id, queue_id, time_created) VALUES($1, $2, $3)', [c_id, q_id, ((Date.now() / 1000) | 0)], function (err, result) {
                             if (err) {
                                 console.log(err);
-                                return cb(err, null)
+                                return callback(err, null)
                             } else {
-                                return cb(null, result)
+                                return callback(null, result)
                             }
                         })
                     }
@@ -162,7 +162,7 @@ function joinQueue(c_id, q_id, cb) {
 
 
 // ****** CHECK QUEUE ******
-function checkQueue(c_id, q_id, cb) {
+function checkQueue(c_id, q_id, callback) {
     let total;
 
     pool.connect((err, client, release) => {
@@ -173,11 +173,11 @@ function checkQueue(c_id, q_id, cb) {
         client.query(`SELECT * FROM queue WHERE UPPER(queue_id) = UPPER($1);`, [q_id], function (err, result) {     // check if queue exists
             if (err) {
                 console.log(err)
-                return cb(err, null)
+                return callback(err, null)
             }
 
             if (result.rows.length == 0) {
-                return cb({
+                return callback({
                     "error": `Queue Id ${q_id} Not Found`,
                     "code": "UNKNOWN_QUEUE"
                 }, null)
@@ -189,7 +189,7 @@ function checkQueue(c_id, q_id, cb) {
                 client.query(`SELECT COUNT(customer_id) "count" FROM customers WHERE UPPER(queue_id) = UPPER($1) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($2) AND served = true ORDER BY row_no DESC LIMIT 1), 0));`, [q_id, q_id], function (err, result) {
                     if (err) {
                         console.log(err)
-                        return cb(err, null)
+                        return callback(err, null)
                     } else {
                         total = parseInt(result.rows[0].count);
                     }
@@ -198,11 +198,11 @@ function checkQueue(c_id, q_id, cb) {
                         client.query('SELECT * FROM customers WHERE customer_id = $1', [c_id], function (err, result) {
                             if (err) {
                                 console.log(err)
-                                return cb(err, null)
+                                return callback(err, null)
                             }
 
                             if (result.rows.length == 0) {
-                                return cb(null, { "total": total, "ahead": -1, "status": queueStatus })
+                                return callback(null, { "total": total, "ahead": -1, "status": queueStatus })
                             } else {
 
 
@@ -212,7 +212,7 @@ function checkQueue(c_id, q_id, cb) {
                                 client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = true AND UPPER(queue_id) = UPPER($1) AND row_no > (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3));', [q_id, c_id, q_id], function (err, result) {
                                     if (err) {
                                         console.log(err)
-                                        return cb(err, null)
+                                        return callback(err, null)
                                     }
                                     console.log("count 1: " + result.rows[0].count);
 
@@ -223,26 +223,26 @@ function checkQueue(c_id, q_id, cb) {
                                         client.query('SELECT COUNT(customer_id) "count" FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) AND row_no < (SELECT row_no FROM customers WHERE customer_id = $2 AND UPPER(queue_id) = UPPER($3)) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($4) AND served = true ORDER BY row_no DESC LIMIT 1), 0));', [q_id, c_id, q_id, q_id], function (err, result) {
                                             if (err) {
                                                 console.log(err)
-                                                return cb(err, null)
+                                                return callback(err, null)
                                             }
                                             console.log("count 2: " + result.rows[0].count);
                                             console.log("hello2");
-                                            return cb(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
+                                            return callback(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
                                         })
 
                                     } else {
-                                        // return cb(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
+                                        // return callback(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
 
                                         let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE
                                         console.log("hello1");
-                                        return cb(null, { "total": total, "ahead": -1, "status": status })
+                                        return callback(null, { "total": total, "ahead": -1, "status": status })
                                     }
                                 })
                             }
                         })
 
                     } else {
-                        return cb(null, { "total": total, "status": "ACTIVE" })
+                        return callback(null, { "total": total, "status": "ACTIVE" })
                     }
 
 
