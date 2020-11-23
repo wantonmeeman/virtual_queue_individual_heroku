@@ -88,7 +88,7 @@ function arrivalRate(q_id, from, duration, cb) {
                                 for (var i = 0; result.rows.length > i; i++) {
                                     if (result1.rows.length != 0) {//If result1 is empty, no body in the queue's time period
                                         for (var x = 0; result1.rows.length > x; x++) {
-                                            if (result.rows[i].timestamp == result1.rows[x].time_created ) {
+                                            if (result.rows[i].timestamp == result1.rows[x].time_created) {
                                                 result.rows[i].count = Number(result1.rows[x].count);//Number() is to standardise, 0 would be a number while anything else would be a string
                                                 break;//Exits the Current For Loop
                                             } else {
@@ -245,9 +245,9 @@ function checkQueue(c_id, q_id, cb) {
                                 })
                             }
                         })
-                        
+
                     } else {
-                        return cb(null, { "total": total, "status": "ACTIVE" })
+                        return cb(null, { "total": total, ahead: -1, "status": "ACTIVE" })
                     }
 
 
@@ -269,7 +269,7 @@ function createQueue(c_id, q_id, callback) {
             console.log(err)
             return callback(err, null)
         }
-        //CHECK IF QUEUE_ID ALREADY EXISTS
+        // CHECK IF QUEUE_ID ALREADY EXISTS
         client.query('SELECT queue_id from queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (error, result) {
             if (error) {
                 callback(err, null)
@@ -279,7 +279,7 @@ function createQueue(c_id, q_id, callback) {
                 callback("422", null)
                 return
             } else {
-                //INSERT QUEUE INTO DATABASE
+                // INSERT QUEUE INTO DATABASE
                 client.query('INSERT INTO queue(queue_id, company_id, status) VALUES ($1, $2, $3)', [q_id, c_id, "INACTIVE"], function (err1, res1) {
                     if (err1) {
                         console.log(err1);
@@ -301,7 +301,7 @@ function createQueue(c_id, q_id, callback) {
 
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
-    //CONVERT USER INPUT TO DATA TO BE STORED IN DATABASE
+    // CONVERT USER INPUT TO DATA TO BE STORED IN DATABASE
     if (status == 'ACTIVATE') {
         status = 'ACTIVE'
     } else if (status == 'DEACTIVATE') {
@@ -312,7 +312,7 @@ function updateQueue(q_id, status, callback) {
             console.log(err)
             return callback(err, null)
         }
-        //CHECK IF QUEUE EXISTS
+        // CHECK IF QUEUE EXISTS
         client.query("SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)", [q_id], function (err1, res1) {
             console.log(res1.rows.length)
             if (res1.rows.length == 0) {
