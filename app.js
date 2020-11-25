@@ -363,9 +363,7 @@ app.put('/company/queue', function (req, res) {
                 }
 
             } else {
-                res.status(200).send({
-                    message: "Queue Updated"
-                })
+                res.status(200).end()
             }
         })
     }
