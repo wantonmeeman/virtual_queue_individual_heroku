@@ -401,27 +401,21 @@ app.put('/company/server', function (req, res) {
  * Company: Arrival Rate
  */
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
+    let errorStatusMsg;
     const from = Date.parse(req.query.from) / 1000;
     const queue_id = req.query.queue_id;
-    const duration = req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
-
-    let schema = schemaObj.arrival_rate
-    let errorStatusMsg;
-    if (duration == NaN) {
-        res.status(400).send({
-            error: errorStatusMsg,
-            code: "INVALID_QUERY_STRING"
-        })
+    if(req.query.duration != undefined){// If duration is not in the query string, dont declare the variable, therefore it is not present
+        var duration = req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
     }
+    let schema = schemaObj.arrival_rate
     let validateStatus = validate(req.query, schema);
-
     if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
-        console.log(errorStatusMsg)
-        res.status(400).send({
-            error: errorStatusMsg,
-            code: "INVALID_QUERY_STRING"
-        })
+        
+            res.status(400).send({
+                error: errorStatusMsg,
+                code: "INVALID_QUERY_STRING"
+            })
 
     } else {
 
