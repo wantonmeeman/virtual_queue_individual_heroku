@@ -106,7 +106,7 @@ var schemaObj = {
 
     update_queue: {
         "type": "object",
-        "required": ["queue_id", "status"],
+        "required": ["queue_id"],
         "properties": {
             "queue_id": {
                 "type": "string",
@@ -114,6 +114,13 @@ var schemaObj = {
                 "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
             },
+        }
+    },
+
+    update_queue_status: {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
             "status": {
                 "type": "string",
                 "minLength": 8,
@@ -184,14 +191,8 @@ function checkErrorMsg(validateStatus) {
             if (errorName == 'type') {
                 errorStatusMsg = "status is not a String!"
 
-            } else if (errorName == 'minLength') {
-                errorStatusMsg = "status is too short!"
-
-            } else if (errorName == 'maxLength') {
-                errorStatusMsg = "status is too long!"
-
             } else if (errorName == 'pattern') {
-                errorStatusMsg = "status has invalid characters!"
+                errorStatusMsg = "status might be either 'ACITVATE' OR 'DEACTIVATE'!"
 
             } else if (errorName == 'required') {
                 errorStatusMsg = "status is not in the body!"
@@ -216,7 +217,7 @@ function checkErrorMsg(validateStatus) {
         // FROM
         case 'instance.from':
             if (errorName == 'type') {
-                errorStatusMsg = "from is not in a Date-time format!"
+                errorStatusMsg = "from is not in a Date-Time format!"
 
             } else if (errorName == 'pattern') {
                 errorStatusMsg = "from is not in a correct format!"
@@ -224,7 +225,7 @@ function checkErrorMsg(validateStatus) {
             }
             break;
 
-        // if a  param/body key is not added
+        // if a param/body key is not added
         case 'instance':
             errorStatusMsg = errorArgument + " is not present"
             break;
@@ -258,7 +259,7 @@ function checkErrorMsg(validateStatus) {
 app.post('/reset', function (req, res) {
     database.resetTables(function (err, result) {
         if (err) {
-            res.status(500).send({
+            res.status(500).json({
                 "error": "Unable to establish connection with database",
                 "code": "UNEXPECTED_ERROR"
             })
@@ -300,12 +301,12 @@ app.post('/company/queue', function (req, res) {
             if (err) {
                 console.log(err);
                 if (err == 422) {
-                    res.status(422).send({
-                        error: "Queue Id '" + queue_id + "' already exists",
+                    res.status(422).json({
+                        error: "Queue ID '" + queue_id + "' already exists",
                         code: "QUEUE_EXISTS"
                     })
                 } else {
-                    res.status(500).send({
+                    res.status(500).json({
                         error: "Unable to establish connection with database",
                         code: "UNEXPECTED_ERROR"
                     })
@@ -326,21 +327,25 @@ app.put('/company/queue', function (req, res) {
     const queue_id = req.query.queue_id;
     const status = req.body.status;
 
+    let status_schema = schemaObj.update_queue_status;
     let schema = schemaObj.update_queue;
+
+    let validateStatus = validate(req.body, status_schema);     // check status if it's ACTIVATE OR DEACTIVATE
+    let validateStatus1 = validate(req.query, schema);          // check queue_id
+
     let errorStatusMsg;
-    let validateStatus = validate(req.query, schema);
 
-
-    if (status != "ACTIVATE" && status != "DEACTIVATE") {
-
-        res.status(400).send({
-            error: "Status must be either 'ACTIVATE' or 'DEACTIVATE'",
+    if (validateStatus.errors.length != 0) {        // since it does not require a specific error msg, we do not need to call checkErrorMsg()
+        errorStatusMsg = checkErrorMsg(validateStatus);
+        res.status(400).json({
+            error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
         })
-    } else if (validateStatus.errors.length != 0) {
-        errorStatusMsg = checkErrorMsg(validateStatus);
 
-        res.status(400).send({
+    } else if (validateStatus1.errors.length != 0) {
+        errorStatusMsg = checkErrorMsg(validateStatus1);
+
+        res.status(400).json({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
         })
@@ -351,12 +356,12 @@ app.put('/company/queue', function (req, res) {
             console.log(queue_id, status)
             if (error) {
                 if (error == "404") {
-                    res.status(404).send({
-                        error: "The queueID '" + queue_id + "' cannot be found",
+                    res.status(404).json({
+                        error: "Queue ID '" + queue_id + "' cannot be found!",
                         code: "UNKNOWN_QUEUE"
                     })
                 } else {
-                    res.status(500).send({
+                    res.status(500).json({
                         error: "Unable to establish connection with database",
                         code: "UNEXPECTED_ERROR"
                     })
@@ -393,14 +398,14 @@ app.put('/company/server', function (req, res) {
         database.serverAvailable(queue_id, function (err, result) {
             if (err == '404') { // If Queue does not exist
                 console.log("Queue doesnt Exist")
-                res.status(404).send({
-                    error: "Queue Id " + queue_id + " Not Found",
+                res.status(404).json({
+                    error: "Queue ID '" + queue_id + "' cannot be found!",
                     code: "UNKNOWN_QUEUE"
                 })
 
             } else if (err != null) { // If other error
 
-                res.status(500).send({
+                res.status(500).json({
                     error: "Unable to establish connection with database",
                     code: "UNEXPECTED_ERROR"
                 })
@@ -408,11 +413,11 @@ app.put('/company/server', function (req, res) {
             } else { // If Success
                 if (result.rows.length != 0) {
                     console.log(result.rows[0])
-                    res.status(200).send({
+                    res.status(200).json({
                         customer_id: parseInt(result.rows[0].customer_id)//This is already a JSON
                     })
                 } else {
-                    res.status(200).send({
+                    res.status(200).json({
                         customer_id: 0
                     })
                 }
@@ -452,20 +457,20 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
 
         database.arrivalRate(queue_id, from, duration, function (err, result) {
             if (err == '404') { // If Q doesnt exist
-                res.status(404).send({
-                    error: "Queue Id " + queue_id + " Not Found",
+                res.status(404).json({
+                    error: "Queue ID '" + queue_id + "' cannot be found!",
                     code: "UNKNOWN_QUEUE"
                 })
 
             } else if (err != null) {//If Other error
-                res.status(500).send({
+                res.status(500).json({
                     error: "Unable to establish connection with database",
                     code: "UNEXPECTED_ERROR"
                 })
 
             } else { // If Success
 
-                res.status(200).send(result)
+                res.status(200).json(result)
 
             }
         })
@@ -486,7 +491,7 @@ app.post('/customer/queue', function (req, res) {
 
     let schema = schemaObj.join_queue;
     let errorStatusMsg;
-    let validateStatus = validate(req.body, schema)
+    let validateStatus = validate(req.body, schema);
 
     if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
@@ -499,18 +504,31 @@ app.post('/customer/queue', function (req, res) {
     } else {
         database.joinQueue(customer_id, queue_id, function (err, result) {
             if (!err) {
-                res.status(201).end()
+                res.status(201).end()       // Successful Response
+
             } else if (err.code == 23503) {
-                res.status(404).json({ error: `Queue Id ${queue_id} not found.`, code: 'UNKNOWN_QUEUE' })
+                res.status(404).json({
+                    error: `Queue ID '${queue_id}' cannot be found!`,
+                    code: 'UNKNOWN_QUEUE'
+                })
 
             } else if (err.code == 'ER_DUP_ENTRY') {
-                res.status(422).json({ error: `Customer ${customer_id} is already in queue ${queue_id}!`, code: 'ALREADY_IN_QUEUE' })
+                res.status(422).json({
+                    error: `Customer '${customer_id}' is already in queue '${queue_id}'!`,
+                    code: 'ALREADY_IN_QUEUE'
+                })
 
             } else if (err.code == 'INACTIVE_QUEUE') {
-                res.status(422).json({ error: `Queue ${queue_id} is inactive.`, code: 'INACTIVE_QUEUE' })
+                res.status(422).json({
+                    error: `Queue '${queue_id}' is inactive.`,
+                    code: 'INACTIVE_QUEUE'
+                })
 
             } else {
-                res.status(500).send('Internal Server Error')
+                res.status(500).json({
+                    error: "Unable to establish connection with database",
+                    code: "UNEXPECTED_ERROR"
+                })
             }
         });
     }
@@ -543,11 +561,16 @@ app.get('/customer/queue', function (req, res) {
         database.checkQueue(customer_id, queue_id, function (err, result) {
             if (!err) {
                 res.status(200).json(result)
+
             } else if (err.code = "UNKNOWN_QUEUE") {
                 res.status(404).json(err)
+
             } else {
                 console.log(err)
-                res.status(500).send('Internal Server Error')
+                res.status(500).json({
+                    error: "Unable to establish connection with database",
+                    code: "UNEXPECTED_ERROR"
+                })
 
             }
         });

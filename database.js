@@ -194,9 +194,9 @@ function checkQueue(c_id, q_id, callback) {
                     } else {
                         total = parseInt(result.rows[0].count);
                     }
-
                     if (c_id != null) {
-                        client.query('SELECT * FROM customers WHERE customer_id = $1', [c_id], function (err, result) {
+                        // check if customer exist in given queue
+                        client.query('SELECT * FROM customers WHERE customer_id = $1 AND UPPER(queue_id) = UPPER($2)', [c_id, q_id], function (err, result) {
                             if (err) {
                                 console.log(err)
                                 return callback(err, null)
