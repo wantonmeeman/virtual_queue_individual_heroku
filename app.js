@@ -106,13 +106,19 @@ var schemaObj = {
 
     update_queue: {
         "type": "object",
-        "required": ["queue_id"],
+        "required": ["queue_id", "status"],
         "properties": {
             "queue_id": {
                 "type": "string",
                 "minLength": 10,
                 "maxLength": 10,
                 "pattern": "^[0-9A-Za-z]*$"
+            },
+            "status": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 10,
+                "pattern": "^(ACTIVATE|DEACTIVATE)$"
             }
         }
     }
@@ -170,6 +176,25 @@ function checkErrorMsg(validateStatus) {
 
             } else if (errorName == 'required') {
                 errorStatusMsg = "queue_id is not in the body!"
+
+            }
+            break;
+
+        case 'instance.status':
+            if (errorName == 'type') {
+                errorStatusMsg = "status is not a String!"
+
+            } else if (errorName == 'minLength') {
+                errorStatusMsg = "status is too short!"
+
+            } else if (errorName == 'maxLength') {
+                errorStatusMsg = "status is too long!"
+
+            } else if (errorName == 'pattern') {
+                errorStatusMsg = "status has invalid characters!"
+
+            } else if (errorName == 'required') {
+                errorStatusMsg = "status is not in the body!"
 
             }
             break;
@@ -480,7 +505,6 @@ app.post('/customer/queue', function (req, res) {
 
             } else {
                 res.status(500).send('Internal Server Error')
-
             }
         });
     }
