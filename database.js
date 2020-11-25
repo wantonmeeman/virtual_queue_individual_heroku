@@ -179,7 +179,7 @@ function checkQueue(c_id, q_id, callback) {
 
             if (result.rows.length == 0) {
                 return callback({
-                    "error": `Queue Id ${q_id} Not Found`,
+                    "error": `Queue ID '${q_id}' cannot be found!`,
                     "code": "UNKNOWN_QUEUE"
                 }, null)
 
