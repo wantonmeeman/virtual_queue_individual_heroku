@@ -239,7 +239,7 @@ function checkQueue(c_id, q_id, callback) {
                         })
 
                     } else {
-                        return callback(null, { "total": total,"ahead":-1, "status": "ACTIVE" })
+                        return callback(null, { "total": total,"ahead":-1, "status": queueStatus })
                     }
 
 
