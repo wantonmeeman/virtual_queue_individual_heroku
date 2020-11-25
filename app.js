@@ -47,9 +47,28 @@ var schemaObj = {
         }
     },
 
-    join_check_queue: {
+    join_queue: {
         "type": "object",
         "required": ["customer_id", "queue_id"],
+        "properties": {
+            "customer_id": {
+                "type": "integer",
+                "minimum": 1000000000,
+                "maximum": 9999999999,
+                "pattern": "^[\d{10}]"
+            },
+            "queue_id": {
+                "type": "string",
+                "pattern": '^[a-zA-Z0-9]*$',
+                "minLength": 10,
+                "maxLength": 10
+            }
+        }
+    },
+
+    check_queue: {
+        "type": "object",
+        "required": ["queue_id"],
         "properties": {
             "customer_id": {
                 "type": "integer",
@@ -102,7 +121,7 @@ var schemaObj = {
 function checkErrorMsg(validateStatus) {
     var errorName = validateStatus.errors[0].name;
     var errorArgument = validateStatus.errors[0].argument;
-    
+
     switch (validateStatus.errors[0].property) {
         // COMPANY_ID
         case 'instance.company_id':
@@ -121,6 +140,7 @@ function checkErrorMsg(validateStatus) {
             }
             break;
 
+        // CUSTOMER_ID
         case 'instance.customer_id':
             if (errorName == 'minimum') {
                 errorStatusMsg = "customer_id is below 10 digits!"
@@ -179,22 +199,11 @@ function checkErrorMsg(validateStatus) {
             }
             break;
 
-        // IF a param/body key is not added
-        // Testing has not been done for customer_id/company_id
+        // if a  param/body key is not added
         case 'instance':
-            // if (errorArgument == 'queue_id') {
-            //     errorStatusMsg = "queue_id is not present!"
-            // }else if(errorArgument == 'customer_id') {
-            //     errorStatusMsg = "customer_id is not present!"
-            // }else if(errorArgument == 'company_id') {
-            //     errorStatusMsg = "company_id is not present!"
-            // }else if(errorArgument == 'from') {
-            //     errorStatusMsg = "from is not present!"
-            // }else if(errorArgument == 'duration') {
-            //     errorStatusMsg = "duration is not present!"
-            // }
             errorStatusMsg = errorArgument + " is not present"
-        break;
+            break;
+
     }
     return errorStatusMsg;
 }
@@ -221,7 +230,7 @@ function checkErrorMsg(validateStatus) {
 /**
  * Reset API
  */
-app.post('/reset', function (req, res) {//Idk if this is the right way to do it.
+app.post('/reset', function (req, res) {
     database.resetTables(function (err, result) {
         if (err) {
             res.status(500).send({
@@ -277,10 +286,8 @@ app.post('/company/queue', function (req, res) {
                     })
                 }
             } else {
-                console.log("Queue Created")
-                res.status(201).send({
-                    message: "Queue Created"
-                })
+                // console.log("Queue Created")
+                res.status(201).end();
             }
         })
     }
@@ -343,7 +350,7 @@ app.put('/company/queue', function (req, res) {
 /**
  * Company: Server Available
  */
-app.put('/company/server', function (req, res) { // Add JSON Schema Validation
+app.put('/company/server', function (req, res) {
     const queue_id = req.body.queue_id;
 
     let schema = schemaObj.server_available
@@ -399,10 +406,10 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
     const from = Date.parse(req.query.from) / 1000;
     const queue_id = req.query.queue_id;
     const duration = req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
-    
+
     let schema = schemaObj.arrival_rate
     let errorStatusMsg;
-    if(duration == NaN){
+    if (duration == NaN) {
         res.status(400).send({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
@@ -410,7 +417,7 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
     }
     let validateStatus = validate(req.query, schema);
 
-    if (validateStatus.errors.length != 0) {//JSON Validation Handling
+    if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
         console.log(errorStatusMsg)
         res.status(400).send({
@@ -433,7 +440,7 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
                     code: "UNEXPECTED_ERROR"
                 })
 
-            } else {//If Success
+            } else { // If Success
 
                 res.status(200).send(result)
 
@@ -454,7 +461,7 @@ app.post('/customer/queue', function (req, res) {
     const customer_id = req.body.customer_id;
     const queue_id = req.body.queue_id;
 
-    let schema = schemaObj.join_check_queue;
+    let schema = schemaObj.join_queue;
     let errorStatusMsg;
     let validateStatus = validate(req.body, schema)
 
@@ -469,7 +476,7 @@ app.post('/customer/queue', function (req, res) {
     } else {
         database.joinQueue(customer_id, queue_id, function (err, result) {
             if (!err) {
-                res.sendStatus(201)
+                res.status(201).end()
             } else if (err.code == 23503) {
                 res.status(404).json({ error: `Queue Id ${queue_id} not found.`, code: 'UNKNOWN_QUEUE' })
 
@@ -498,7 +505,7 @@ app.get('/customer/queue', function (req, res) {
     let query = req.query
     query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
 
-    let schema = schemaObj.join_check_queue;
+    let schema = schemaObj.check_queue;
     let errorStatusMsg;
     let validateStatus = validate(query, schema)
 
@@ -535,7 +542,7 @@ app.get('/customer/queue', function (req, res) {
 /**
  * 404
  */
-app.use(function (req, res, next) { //404
+app.use(function (req, res, next) { // 404
     res.status(404).json(
         {
             error: "Path not found",

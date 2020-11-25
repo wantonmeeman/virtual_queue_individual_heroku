@@ -214,7 +214,6 @@ function checkQueue(c_id, q_id, callback) {
                                         console.log(err)
                                         return callback(err, null)
                                     }
-                                    console.log("count 1: " + result.rows[0].count);
 
                                     if (parseInt(result.rows[0].count) === 0) {
                                         // (if count is 0, customer )  
@@ -225,8 +224,6 @@ function checkQueue(c_id, q_id, callback) {
                                                 console.log(err)
                                                 return callback(err, null)
                                             }
-                                            console.log("count 2: " + result.rows[0].count);
-                                            console.log("hello2");
                                             return callback(null, { "total": total, "ahead": parseInt(result.rows[0].count), "status": "ACTIVE" })
                                         })
 
@@ -234,7 +231,6 @@ function checkQueue(c_id, q_id, callback) {
                                         // return callback(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
 
                                         let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE
-                                        console.log("hello1");
                                         return callback(null, { "total": total, "ahead": -1, "status": status })
                                     }
                                 })
