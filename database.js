@@ -10,6 +10,7 @@ const pool = new Pool({
 })
 
 function serverAvailable(q_id, callback) {
+ 
     pool.connect((err, client, release) => { // 1 Pool = 1 Client
 
         if (err) { // Error Handling for Pool
@@ -292,6 +293,7 @@ function createQueue(c_id, q_id, callback) {
 
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
+  
     // CONVERT USER INPUT TO DATA TO BE STORED IN DATABASE
     if (status == 'ACTIVATE') {
         status = 'ACTIVE'
