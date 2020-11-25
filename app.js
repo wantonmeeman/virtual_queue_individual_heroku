@@ -533,15 +533,14 @@ app.post('/customer/queue', function (req, res) {
  * Customer: Check Queue
  */
 app.get('/customer/queue', function (req, res) {
-    const customer_id = req.query.customer_id;
     const queue_id = req.query.queue_id;
-
-    let query = req.query
-    query["customer_id"] = parseInt(query["customer_id"])    // parse query STRING to INT
-
+    if(req.query.customer_id != undefined){
+        req.query.customer_id = Number(req.query.customer_id) // parse query STRING to INT
+    }   
+    const customer_id = req.query.customer_id
     let schema = schemaObj.check_queue;
     let errorStatusMsg;
-    let validateStatus = validate(query, schema)
+    let validateStatus = validate(req.query, schema)
 
     if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
