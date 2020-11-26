@@ -11,7 +11,7 @@ const pool = new Pool({
 
 function serverAvailable(q_id, callback) {
  
-    pool.connect((err, client, release) => { // 1 Pool = 1 Client
+    pool.connect((err, client, release) => {
 
         if (err) { // Error Handling for Pool
             console.log(err)
@@ -19,14 +19,14 @@ function serverAvailable(q_id, callback) {
         }
 
         // Find out if Queue exists -> Find out if Queue is empty -> Update Customer in Queue
-        client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {//0
+        client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {
             if (err) {
                 console.log(err)
                 return callback(err.stack, null)
             }
             if (result.rows.length == 0) { // Queue does not exist
                 return callback("404", null)
-            } else {
+            } else {//Select the next that has not been served and is in the queue specified
                 client.query('SELECT customer_id FROM customers WHERE served = false AND UPPER(queue_id) = UPPER($1) ORDER BY time_created ASC LIMIT 1', [q_id], function (err1, result1) {//1
                     if (err1) {
                         console.log(err1)
@@ -35,7 +35,7 @@ function serverAvailable(q_id, callback) {
                     if (result1.rows.length == 0) { // Queue is empty
                         console.log("Q is empty")
                         return callback(null, result1)
-                    } else {
+                    } else {//Set Customer (that has been selected) status = true
                         client.query('UPDATE customers SET served = true WHERE customer_id = $1', [result1.rows[0].customer_id], function (err2, result2) {//Set served to true,2
                             if (err2) {
                                 console.log(err2)
@@ -57,13 +57,13 @@ function serverAvailable(q_id, callback) {
 function arrivalRate(q_id, from, duration, callback) {
     //End Date to Unix
     var endDate = from + (duration * 60)
-    pool.connect((err, client, release) => { // 1 Pool = 1 Client
+    pool.connect((err, client, release) => {
 
         if (err) { // Error Handling for Pool
             return callback('Error acquiring client', null)
         }
-
-        client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {//change to from queue when fk is added
+        //UPPER() Means Case doesnt matter
+        client.query('SELECT queue_id FROM queue WHERE UPPER(queue_id) = UPPER($1)', [q_id], function (err, result) {
             if (err) {
                 console.log(err)
                 return callback(err, null)
@@ -72,7 +72,7 @@ function arrivalRate(q_id, from, duration, callback) {
                 console.log("Q doesnt exist")
                 return callback("404", null)
             } else {
-                //Populate the Array
+                //Populate the Array with a forloop
                 var jsonArray = [];
                 for (let i = from + 1; i <= endDate; i++) {
                     jsonArray.push({
@@ -85,14 +85,15 @@ function arrivalRate(q_id, from, duration, callback) {
                         console.log(err)
                         return callback(err, null)
                     } else {
-                        console.log("Starting Date: " + from)
-                        console.log("EndDate: " + endDate)
-                        console.log(jsonArray.length)
-                        if (result.rows.length != 0) { //Check if there is nobody is in the array
+                        if (result.rows.length != 0) { //Check if there is nobody is in the array, if the array is empty just skip
                             for (var i = 0; jsonArray.length > i; i++) {
                                 for (var x = 0; result.rows.length > x; x++) {
                                     if (jsonArray[i].timestamp == result.rows[x].time_created) {
-                                        jsonArray[i].count = Number(result.rows[x].count);//It would return string otherwise
+                                        jsonArray[i].count = Number(result.rows[x].count);
+                                        //Without the Number() it would be 
+                                        // count: "1"
+                                        //instead of 
+                                        // count: 1
                                     }
                                 }
                             }
