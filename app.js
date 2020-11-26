@@ -385,9 +385,9 @@ app.put('/company/server', function (req, res) {
     let errorStatusMsg;
     let validateStatus = validate(req.body, schema);
 
-    if (validateStatus.errors.length != 0) { // JSON Validation Handling
+    if (validateStatus.errors.length != 0) {
+        // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
-        // console.log(errorStatusMsg)
 
         res.status(400).json({ // If JSON Validation returns false
             error: errorStatusMsg,
@@ -395,8 +395,10 @@ app.put('/company/server', function (req, res) {
         })
 
     } else {
+
         database.serverAvailable(queue_id, function (err, result) {
             if (err == '404') { // If Queue does not exist
+
                 console.log("Queue doesnt Exist")
                 res.status(404).json({
                     error: "Queue ID '" + queue_id + "' cannot be found!",
@@ -411,6 +413,7 @@ app.put('/company/server', function (req, res) {
                 })
 
             } else { // If Success
+
                 if (result.rows.length != 0) {
                     console.log(result.rows[0])
                     res.status(200).json({
@@ -425,6 +428,7 @@ app.put('/company/server', function (req, res) {
             }
 
         })
+
     }
 })
 /**
@@ -432,18 +436,18 @@ app.put('/company/server', function (req, res) {
  */
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
     let errorStatusMsg;
-    const from = Date.parse(req.query.from) / 1000;
+    const from = Date.parse(req.query.from) / 1000;//get Unix time from query
     const queue_id = req.query.queue_id;
 
-    if (req.query.duration != undefined) { // If duration is not in the query string, dont declare the variable, therefore it is not present
+    if (req.query.duration != undefined) {// If duration is not in the query string, dont declare the variable, therefore it is not present and will be handled by the rest of JSON schema Validation
         var duration = req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
     }
-    let schema = schemaObj.arrival_rate
-    let validateStatus = validate(req.query, schema);
 
+    let schema = schemaObj.arrival_rate
+    let validateStatus = validate(req.query, schema);// JSON Validation Handling
     if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
-
+        
         res.status(400).json({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"
@@ -457,19 +461,16 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
                     error: "Queue ID '" + queue_id + "' cannot be found!",
                     code: "UNKNOWN_QUEUE"
                 })
-
             } else if (err != null) {//If Other error
                 res.status(500).json({
                     error: "Unable to establish connection with database",
                     code: "UNEXPECTED_ERROR"
                 })
-
             } else { // If Success
-
                 res.status(200).json(result)
-
             }
         })
+
     }
 })
 
