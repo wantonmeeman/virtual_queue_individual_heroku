@@ -1,3 +1,7 @@
+// Group 4
+// Members: Alastair Tan (p1936096), Yu Dong En (p1936348), Guan Shao Jun (p1925545)
+// Class: DIT/2B/02
+
 const express = require('express'); // DO NOT DELETE
 const cors = require('cors');
 const morgan = require('morgan');
@@ -447,7 +451,7 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
     let validateStatus = validate(req.query, schema);// JSON Validation Handling
     if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
-        
+
         res.status(400).json({
             error: errorStatusMsg,
             code: "INVALID_QUERY_STRING"

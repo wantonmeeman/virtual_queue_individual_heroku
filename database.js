@@ -1,3 +1,7 @@
+// Group 4
+// Members: Alastair Tan (p1936096), Yu Dong En (p1936348), Guan Shao Jun (p1925545)
+// Class: DIT/2B/02
+
 const { log } = require('async')
 const e = require('express')
 const { Pool, Client } = require('pg')
