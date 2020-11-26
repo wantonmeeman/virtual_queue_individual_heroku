@@ -291,7 +291,7 @@ app.post('/company/queue', function (req, res) {
         errorStatusMsg = checkErrorMsg(validateStatus);
         //console.log(errorStatusMsg)
 
-        res.status(400).send({
+        res.status(400).json({
             error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
         })
@@ -389,7 +389,7 @@ app.put('/company/server', function (req, res) {
         errorStatusMsg = checkErrorMsg(validateStatus);
         // console.log(errorStatusMsg)
 
-        res.status(400).send({ // If JSON Validation returns false
+        res.status(400).json({ // If JSON Validation returns false
             error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
         })
@@ -434,18 +434,20 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
     let errorStatusMsg;
     const from = Date.parse(req.query.from) / 1000;
     const queue_id = req.query.queue_id;
-    if(req.query.duration != undefined){// If duration is not in the query string, dont declare the variable, therefore it is not present
+
+    if (req.query.duration != undefined) { // If duration is not in the query string, dont declare the variable, therefore it is not present
         var duration = req.query.duration = Number(req.query.duration); // It's a query STRING, so we need to change this to INT, or Number if we want to have error handling
     }
     let schema = schemaObj.arrival_rate
     let validateStatus = validate(req.query, schema);
+
     if (validateStatus.errors.length != 0) { // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
-        
-            res.status(400).send({
-                error: errorStatusMsg,
-                code: "INVALID_QUERY_STRING"
-            })
+
+        res.status(400).json({
+            error: errorStatusMsg,
+            code: "INVALID_QUERY_STRING"
+        })
 
     } else {
 
@@ -534,9 +536,9 @@ app.post('/customer/queue', function (req, res) {
  */
 app.get('/customer/queue', function (req, res) {
     const queue_id = req.query.queue_id;
-    if(req.query.customer_id != undefined){
+    if (req.query.customer_id != undefined) {
         req.query.customer_id = Number(req.query.customer_id) // parse query STRING to INT
-    }   
+    }
     const customer_id = req.query.customer_id
     let schema = schemaObj.check_queue;
     let errorStatusMsg;
