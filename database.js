@@ -6,10 +6,10 @@ const { log } = require('async')
 const e = require('express')
 const { Pool, Client } = require('pg')
 const pool = new Pool({
-    user: 'ftzvjgxu',
+    user: 'ymrwrren',
     host: 'john.db.elephantsql.com',
-    database: 'ftzvjgxu',
-    password: 'gQt5XXIrCa81Dcn2MTonBdeQc59ER4Aw',
+    database: 'ymrwrren',
+    password: 'SzaRM_tGOsn0X2eo7TY4j9-EDnAfmwh1',
     port: 5432,
 })
 
@@ -40,6 +40,7 @@ function serverAvailable(q_id, callback) {
                         console.log("Q is empty")
                         return callback(null, result1)
                     } else {//Set Customer (that has been selected) status = true
+                        console.log("CustoemrId "+result1.rows[0].customer_id)
                         client.query('UPDATE customers SET served = true WHERE customer_id = $1', [result1.rows[0].customer_id], function (err2, result2) {//Set served to true,2
                             if (err2) {
                                 console.log(err2)
@@ -117,8 +118,8 @@ function arrivalRate(q_id, from, duration, callback) {
 // ****** JOIN QUEUE ******
 function joinQueue(c_id, q_id, callback) {
 
-    console.log(c_id)
-    console.log(q_id)
+    console.log('CustomerID: '+c_id)
+    console.log('QueueID: '+q_id)
 
     pool.connect((err, client, release) => {
         if (err) { // Error Handling for Pool
@@ -190,6 +191,7 @@ function checkQueue(c_id, q_id, callback) {
 
             } else {
                 let queueStatus = result.rows[0].status;
+
                 // total no. of ppl that is still in queue (excluding those have missed the queue/already served)
                 // COALESCE (return first non null value, if there are no served customers in queue (null), set it to 0)
                 client.query(`SELECT COUNT(customer_id) "count" FROM customers WHERE UPPER(queue_id) = UPPER($1) AND row_no > (SELECT COALESCE((SELECT row_no FROM customers WHERE UPPER(queue_id) = UPPER($2) AND served = true ORDER BY row_no DESC LIMIT 1), 0));`, [q_id, q_id], function (err, result) {
@@ -234,6 +236,7 @@ function checkQueue(c_id, q_id, callback) {
                                         })
 
                                     } else {
+                                        
                                         // return callback(null, { "total": total, "ahead": parseInt(0 - result.rows[0].count), "status": "INACTIVE" })
 
                                         let status = total > 0 ? "ACTIVE" : "INACTIVE"      // if total is more than 0, queue is ACTIVE

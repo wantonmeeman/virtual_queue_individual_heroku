@@ -392,7 +392,7 @@ app.put('/company/server', function (req, res) {
     if (validateStatus.errors.length != 0) {
         // JSON Validation Handling
         errorStatusMsg = checkErrorMsg(validateStatus);
-
+            
         res.status(400).json({ // If JSON Validation returns false
             error: errorStatusMsg,
             code: "INVALID_JSON_BODY"
@@ -419,7 +419,6 @@ app.put('/company/server', function (req, res) {
             } else { // If Success
 
                 if (result.rows.length != 0) {
-                    console.log(result.rows[0])
                     res.status(200).json({
                         customer_id: parseInt(result.rows[0].customer_id)//This is already a JSON
                     })
@@ -514,12 +513,14 @@ app.post('/customer/queue', function (req, res) {
                 })
 
             } else if (err.code == 'ER_DUP_ENTRY') {
+                console.log("Duplicate Entry")
                 res.status(422).json({
                     error: `Customer '${customer_id}' is already in queue '${queue_id}'!`,
                     code: 'ALREADY_IN_QUEUE'
                 })
 
             } else if (err.code == 'INACTIVE_QUEUE') {
+                console.log("Queue is inactive")
                 res.status(422).json({
                     error: `Queue '${queue_id}' is inactive.`,
                     code: 'INACTIVE_QUEUE'
