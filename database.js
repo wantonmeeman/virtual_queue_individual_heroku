@@ -6,7 +6,7 @@ const { log } = require('async')
 const e = require('express')
 const { Pool, Client } = require('pg')
 const pool = new Pool({
-    user: 'ymrwrren',
+    user: 'ymrwrren',//New, Individual Database 
     host: 'john.db.elephantsql.com',
     database: 'ymrwrren',
     password: 'SzaRM_tGOsn0X2eo7TY4j9-EDnAfmwh1',
