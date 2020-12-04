@@ -7,7 +7,7 @@ const e = require('express')
 const { Pool, Client } = require('pg')
 const pool = new Pool({
     user: 'ymrwrren',//New, Individual Database 
-    host: 'john.db.elephantsql.com',
+    host: 'john.db.elephantsql.com',//1
     database: 'ymrwrren',
     password: 'SzaRM_tGOsn0X2eo7TY4j9-EDnAfmwh1',
     port: 5432,
