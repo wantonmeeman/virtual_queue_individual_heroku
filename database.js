@@ -11,6 +11,8 @@ const pool = new Pool({
     database: 'ymrwrren',
     password: 'SzaRM_tGOsn0X2eo7TY4j9-EDnAfmwh1',
     port: 5432,
+    //Connection URL
+    //postgres://ymrwrren:SzaRM_tGOsn0X2eo7TY4j9-EDnAfmwh1@john.db.elephantsql.com:5432/ymrwrren
 })
 
 function serverAvailable(q_id, callback) {
