@@ -308,7 +308,7 @@ function getQueue(c_id, callback) {
             console.log(err)
             return callback(err, null)
         }
-        client.query("SELECT queue_id,status FROM queue_tab WHERE queue_tab.company_id = $1",[c_id],function(err1,res1){
+        client.query("SELECT queue_id,status FROM queue WHERE queue.company_id = $1",[c_id],function(err1,res1){
             if (err1) {
                 console.log(err1)
                 return callback(err1, null)
