@@ -315,10 +315,12 @@ function getQueue(c_id, callback) {
             } else {
                 var arrayOfQs = [];
                 for (var x = 0; res1.rows.length > x; x++) {
+                    console.log(res1.rows[x])
                     arrayOfQs.push({
-                        "queue_id":Number(res1.rows[x].queue_id).toString(36).toUpperCase(),
-                        // "is_active": res1.rows[x].status == "INACTIVE" ? 0 : 1
-                        "is_active": res1.rows[x].status
+                        //"queue_id":Number(res1.rows[x].queue_id).toString(36).toUpperCase(), base 10 to base 36
+                        "queue_id":res1.rows[x].queue_id.toUpperCase(),
+                        "is_active": res1.rows[x].status == "INACTIVE" ? 0 : 1
+                        //"is_active": res1.rows[x].status
                     })
                 }
                 return callback(null,arrayOfQs)
