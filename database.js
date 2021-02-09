@@ -301,6 +301,35 @@ function createQueue(c_id, q_id, callback) {
 
 }
 
+// ****** GETQUEUE ******
+function getQueue(c_id, callback) {
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.log(err)
+            return callback(err, null)
+        }
+        client.query("SELECT queue_id,status FROM queue_tab WHERE queue_tab.company_id = $1",[c_id],function(err1,res1){
+            if (err1) {
+                console.log(err1)
+                return callback(err1, null)
+            } else {
+                var arrayOfQs = [];
+                for (var x = 0; res1.rows.length > x; x++) {
+                    arrayOfQs.push({
+                        "queue_id":Number(res1.rows[x].queue_id).toString(36).toUpperCase(),
+                        // "is_active": res1.rows[x].status == "INACTIVE" ? 0 : 1
+                        "is_active": res1.rows[x].status
+                    })
+                }
+                return callback(null,arrayOfQs)
+            }
+        })
+        client.release();
+    })
+
+}
+
+
 // ****** UPDATE QUEUE ******
 function updateQueue(q_id, status, callback) {
   
@@ -370,5 +399,6 @@ module.exports = {
     createQueue,
     updateQueue,
     resetTables,
-    closeDatabaseConnections,
+    getQueue,
+    closeDatabaseConnections
 };

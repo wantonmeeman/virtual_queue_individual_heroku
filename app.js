@@ -107,6 +107,18 @@ var schemaObj = {
             }
         }
     },
+    get_queue: {
+        "type": "object",
+        "required": ["company_id"],
+        "properties": {
+            "company_id": {
+                "type": "integer",
+                "minimum": 1000000000,
+                "maximum": 9999999999,
+                "pattern": "^[\d{10}]"
+            }
+        }
+    },
 
     update_queue: {
         "type": "object",
@@ -478,6 +490,42 @@ app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Valida
 })
 
 /**
+ * Company: Get Queue
+ */
+app.get('/company/queue', function (req, res) {
+    let errorStatusMsg;
+    req.query.company_id = Number(req.query.company_id)
+    const company_id = req.query.company_id;
+    let schema = schemaObj.get_queue
+    let validateStatus = validate(req.query, schema)
+
+    if (validateStatus.errors.length != 0) { // JSON Validation Handling
+        errorStatusMsg = checkErrorMsg(validateStatus);
+
+        res.status(400).json({
+            error: errorStatusMsg,
+            code: "INVALID_QUERY_STRING"
+        })
+
+    } else {
+        
+        database.getQueue(company_id, function (err, result) {
+            if (!err) {
+                res.status(200).json(result)
+            } else {
+                res.status(500).json({
+                    error: err,
+                    error: "Unable to establish connection with database",
+                    code: "UNEXPECTED_ERROR"
+                })
+
+            }
+        });
+    }
+
+})
+
+/**
  * ========================== CUSTOMER =========================
  */
 
@@ -580,6 +628,8 @@ app.get('/customer/queue', function (req, res) {
 
 })
 
+
+
 /**
  * ========================== UTILS =========================
  */
@@ -601,8 +651,9 @@ app.use(function (req, res, next) { // 404
  * Error Handler
  */
 app.use(function (err, req, res, next) {
+    console.log(err)
     res.status(500).json(
-        {
+        {   
             error: "Unable to establish connection with database",
             code: "UNEXPECTED_ERROR"
         }
