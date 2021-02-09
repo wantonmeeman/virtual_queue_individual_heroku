@@ -317,10 +317,14 @@ function getQueue(c_id, callback) {
                 for (var x = 0; res1.rows.length > x; x++) {
                     console.log(res1.rows[x])
                     arrayOfQs.push({
+                        //Use these values if backend-tester was used to populate
                         //"queue_id":Number(res1.rows[x].queue_id).toString(36).toUpperCase(), base 10 to base 36
+                        //"is_active": res1.rows[x].status
+
+                        //Use these values if my backend(indiv Heroku) was used to populate 
                         "queue_id":res1.rows[x].queue_id.toUpperCase(),
                         "is_active": res1.rows[x].status == "INACTIVE" ? 0 : 1
-                        //"is_active": res1.rows[x].status
+                        
                     })
                 }
                 return callback(null,arrayOfQs)
