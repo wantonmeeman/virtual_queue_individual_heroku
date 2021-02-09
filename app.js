@@ -27,9 +27,10 @@ var schemaObj = {
                 "pattern": '^[a-zA-Z0-9]*$'
             },
             "from": {
-                "type": "date-time",
+                "type": "string",
+                "format":"date-time",
                 //"pattern":'(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})[+-](\d{2})\:(\d{2})'
-                "pattern": /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/
+                //"pattern": /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/
             },
             "duration": {
                 "type": "integer",
