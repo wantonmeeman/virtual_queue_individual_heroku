@@ -452,7 +452,7 @@ app.put('/company/server', function (req, res) {
  */
 app.get('/company/arrival_rate', function (req, res) { // Add JSON Schema Validation
     let errorStatusMsg;
-    const from = Date.parse(req.query.from) / 1000;//get Unix time from query
+    const from = parseInt(Date.parse(req.query.from) / 1000);//get Unix time from query
     const queue_id = req.query.queue_id;
 
     if (req.query.duration != undefined) {// If duration is not in the query string, dont declare the variable, therefore it is not present and will be handled by the rest of JSON schema Validation
